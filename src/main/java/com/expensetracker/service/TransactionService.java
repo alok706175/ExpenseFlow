@@ -4,6 +4,7 @@ import com.expensetracker.dto.SummaryDTO;
 import com.expensetracker.dto.TransactionRequestDTO;
 import com.expensetracker.dto.TransactionResponseDTO;
 import com.expensetracker.entity.TransactionType;
+import com.expensetracker.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -11,15 +12,16 @@ import java.time.LocalDate;
 
 public interface TransactionService {
 
-    TransactionResponseDTO createTransaction(TransactionRequestDTO requestDTO);
+    TransactionResponseDTO createTransaction(TransactionRequestDTO requestDTO, User user);
 
-    TransactionResponseDTO getTransactionById(Long id);
+    TransactionResponseDTO getTransactionById(Long id, User user);
 
-    TransactionResponseDTO updateTransaction(Long id, TransactionRequestDTO requestDTO);
+    TransactionResponseDTO updateTransaction(Long id, TransactionRequestDTO requestDTO, User user);
 
-    void deleteTransaction(Long id);
+    void deleteTransaction(Long id, User user);
 
     Page<TransactionResponseDTO> getTransactions(
+            User user,
             LocalDate startDate,
             LocalDate endDate,
             String category,
@@ -28,9 +30,10 @@ public interface TransactionService {
             Pageable pageable
     );
 
-    SummaryDTO getSummary(LocalDate startDate, LocalDate endDate, String monthYear);
+    SummaryDTO getSummary(User user, LocalDate startDate, LocalDate endDate, String monthYear);
 
     byte[] exportTransactionsToCsv(
+            User user,
             LocalDate startDate,
             LocalDate endDate,
             String category,
@@ -38,4 +41,3 @@ public interface TransactionService {
             String search
     );
 }
-

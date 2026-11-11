@@ -1,5 +1,6 @@
 package com.expensetracker.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -13,13 +14,18 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "budgets", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_budget_month_year", columnNames = {"monthYear"})
+    @UniqueConstraint(name = "uk_budget_user_month_year", columnNames = {"user_id", "monthYear"})
 })
 public class Budget {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 
     @NotBlank(message = "Month and year string is required (e.g., '2026-11')")
     @Pattern(regexp = "^\\d{4}-(0[1-9]|1[0-2])$", message = "monthYear format must be YYYY-MM")
@@ -42,7 +48,8 @@ public class Budget {
     public Budget() {
     }
 
-    public Budget(String monthYear, BigDecimal monthlyLimit) {
+    public Budget(User user, String monthYear, BigDecimal monthlyLimit) {
+        this.user = user;
         this.monthYear = monthYear;
         this.monthlyLimit = monthlyLimit;
     }
@@ -53,6 +60,14 @@ public class Budget {
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getMonthYear() {
@@ -87,4 +102,3 @@ public class Budget {
         this.updatedAt = updatedAt;
     }
 }
-

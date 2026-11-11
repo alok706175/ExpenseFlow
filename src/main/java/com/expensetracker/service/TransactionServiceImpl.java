@@ -7,10 +7,13 @@ import com.expensetracker.dto.TransactionResponseDTO;
 import com.expensetracker.entity.Budget;
 import com.expensetracker.entity.Transaction;
 import com.expensetracker.entity.TransactionType;
+import com.expensetracker.entity.User;
 import com.expensetracker.exception.ResourceNotFoundException;
 import com.expensetracker.repository.BudgetRepository;
 import com.expensetracker.repository.TransactionRepository;
 import com.opencsv.CSVWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -30,6 +33,8 @@ import java.util.*;
 @Transactional
 public class TransactionServiceImpl implements TransactionService {
 
+    private static final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);
+
     private final TransactionRepository transactionRepository;
     private final BudgetRepository budgetRepository;
 
@@ -39,24 +44,25 @@ public class TransactionServiceImpl implements TransactionService {
     }
 
     @Override
-    public TransactionResponseDTO createTransaction(TransactionRequestDTO requestDTO) {
-        Transaction transaction = mapToEntity(requestDTO);
+    public TransactionResponseDTO createTransaction(TransactionRequestDTO requestDTO, User user) {
+        Transaction transaction = mapToEntity(requestDTO, user);
         Transaction saved = transactionRepository.save(transaction);
+        log.info("Created transaction [ID: {}] for user [ID: {}]", saved.getId(), user.getId());
         return mapToDTO(saved);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public TransactionResponseDTO getTransactionById(Long id) {
-        Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found with id: " + id));
+    public TransactionResponseDTO getTransactionById(Long id, User user) {
+        Transaction transaction = transactionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found or access denied for id: " + id));
         return mapToDTO(transaction);
     }
 
     @Override
-    public TransactionResponseDTO updateTransaction(Long id, TransactionRequestDTO requestDTO) {
-        Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found with id: " + id));
+    public TransactionResponseDTO updateTransaction(Long id, TransactionRequestDTO requestDTO, User user) {
+        Transaction transaction = transactionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found or access denied for id: " + id));
 
         transaction.setTitle(requestDTO.getTitle().trim());
         transaction.setAmount(requestDTO.getAmount());
@@ -66,20 +72,23 @@ public class TransactionServiceImpl implements TransactionService {
         transaction.setNotes(requestDTO.getNotes() != null ? requestDTO.getNotes().trim() : null);
 
         Transaction updated = transactionRepository.save(transaction);
+        log.info("Updated transaction [ID: {}] for user [ID: {}]", updated.getId(), user.getId());
         return mapToDTO(updated);
     }
 
     @Override
-    public void deleteTransaction(Long id) {
-        if (!transactionRepository.existsById(id)) {
-            throw new ResourceNotFoundException("Transaction not found with id: " + id);
-        }
-        transactionRepository.deleteById(id);
+    public void deleteTransaction(Long id, User user) {
+        Transaction transaction = transactionRepository.findByIdAndUser(id, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Transaction not found or access denied for id: " + id));
+
+        transactionRepository.delete(transaction);
+        log.info("Deleted transaction [ID: {}] for user [ID: {}]", id, user.getId());
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<TransactionResponseDTO> getTransactions(
+            User user,
             LocalDate startDate,
             LocalDate endDate,
             String category,
@@ -92,25 +101,25 @@ public class TransactionServiceImpl implements TransactionService {
                 ? category.trim()
                 : null;
 
-        return transactionRepository.findWithFilters(startDate, endDate, sanitizedCategory, type, sanitizedSearch, pageable)
+        return transactionRepository.findWithFilters(user, startDate, endDate, sanitizedCategory, type, sanitizedSearch, pageable)
                 .map(this::mapToDTO);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public SummaryDTO getSummary(LocalDate startDate, LocalDate endDate, String monthYear) {
+    public SummaryDTO getSummary(User user, LocalDate startDate, LocalDate endDate, String monthYear) {
         SummaryDTO summary = new SummaryDTO();
 
-        // 1. Calculate Income and Expense
+        // 1. Calculate Aggregated Income and Expense
         BigDecimal totalIncome;
         BigDecimal totalExpense;
 
         if (startDate != null && endDate != null) {
-            totalIncome = transactionRepository.sumAmountByTypeAndDateRange(TransactionType.INCOME, startDate, endDate);
-            totalExpense = transactionRepository.sumAmountByTypeAndDateRange(TransactionType.EXPENSE, startDate, endDate);
+            totalIncome = transactionRepository.sumAmountByTypeAndDateRange(user, TransactionType.INCOME, startDate, endDate);
+            totalExpense = transactionRepository.sumAmountByTypeAndDateRange(user, TransactionType.EXPENSE, startDate, endDate);
         } else {
-            totalIncome = transactionRepository.sumAmountByType(TransactionType.INCOME);
-            totalExpense = transactionRepository.sumAmountByType(TransactionType.EXPENSE);
+            totalIncome = transactionRepository.sumAmountByType(user, TransactionType.INCOME);
+            totalExpense = transactionRepository.sumAmountByType(user, TransactionType.EXPENSE);
         }
 
         totalIncome = totalIncome != null ? totalIncome : BigDecimal.ZERO;
@@ -122,8 +131,8 @@ public class TransactionServiceImpl implements TransactionService {
 
         // 2. Category Breakdown
         List<Object[]> categoryBreakdown = (startDate != null && endDate != null)
-                ? transactionRepository.findCategoryExpenseBreakdownByDateRange(startDate, endDate)
-                : transactionRepository.findCategoryExpenseBreakdown();
+                ? transactionRepository.findCategoryExpenseBreakdownByDateRange(user, startDate, endDate)
+                : transactionRepository.findCategoryExpenseBreakdown(user);
 
         Map<String, BigDecimal> categoryMap = new LinkedHashMap<>();
         String topCategory = "N/A";
@@ -142,42 +151,57 @@ public class TransactionServiceImpl implements TransactionService {
         summary.setCategoryExpenses(categoryMap);
         summary.setTopSpendingCategory(topCategory);
 
-        // 3. Monthly Trends (Past 6 months)
+        // 3. OPTIMIZED Monthly Trends (Single Query replacing 12 separate DB calls!)
         YearMonth currentYm = (monthYear != null && !monthYear.trim().isEmpty())
                 ? YearMonth.parse(monthYear.trim())
                 : YearMonth.now();
 
         summary.setCurrentMonth(currentYm.toString());
 
-        List<MonthlyTrendDTO> trends = new ArrayList<>();
+        YearMonth earliestMonth = currentYm.minusMonths(5);
+        LocalDate sixMonthsAgoStart = earliestMonth.atDay(1);
+
+        List<Object[]> rawTrendRows = transactionRepository.findTrendsDataSince(user, sixMonthsAgoStart);
+
+        // Group rows in memory: YYYY-MM -> [IncomeSum, ExpenseSum]
+        Map<String, BigDecimal[]> monthlyAggregates = new HashMap<>();
         DateTimeFormatter ymFormatter = DateTimeFormatter.ofPattern("yyyy-MM");
 
+        for (Object[] row : rawTrendRows) {
+            TransactionType type = (TransactionType) row[0];
+            LocalDate txDate = (LocalDate) row[1];
+            BigDecimal amt = (BigDecimal) row[2];
+
+            String ym = txDate.format(ymFormatter);
+            BigDecimal[] sums = monthlyAggregates.computeIfAbsent(ym, k -> new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+
+            if (type == TransactionType.INCOME) {
+                sums[0] = sums[0].add(amt);
+            } else if (type == TransactionType.EXPENSE) {
+                sums[1] = sums[1].add(amt);
+            }
+        }
+
+        List<MonthlyTrendDTO> trends = new ArrayList<>();
         for (int i = 5; i >= 0; i--) {
             YearMonth targetMonth = currentYm.minusMonths(i);
-            LocalDate start = targetMonth.atDay(1);
-            LocalDate end = targetMonth.atEndOfMonth();
+            String targetYmStr = targetMonth.format(ymFormatter);
 
-            BigDecimal mIncome = transactionRepository.sumAmountByTypeAndDateRange(TransactionType.INCOME, start, end);
-            BigDecimal mExpense = transactionRepository.sumAmountByTypeAndDateRange(TransactionType.EXPENSE, start, end);
-
-            trends.add(new MonthlyTrendDTO(
-                    targetMonth.format(ymFormatter),
-                    mIncome != null ? mIncome : BigDecimal.ZERO,
-                    mExpense != null ? mExpense : BigDecimal.ZERO
-            ));
+            BigDecimal[] sums = monthlyAggregates.getOrDefault(targetYmStr, new BigDecimal[]{BigDecimal.ZERO, BigDecimal.ZERO});
+            trends.add(new MonthlyTrendDTO(targetYmStr, sums[0], sums[1]));
         }
         summary.setMonthlyTrends(trends);
 
-        // 4. Budget & Threshold Alert for Current Month
+        // 4. Budget & Threshold Alert for Target Month
         LocalDate curMonthStart = currentYm.atDay(1);
         LocalDate curMonthEnd = currentYm.atEndOfMonth();
         BigDecimal currentMonthExp = transactionRepository.sumAmountByTypeAndDateRange(
-                TransactionType.EXPENSE, curMonthStart, curMonthEnd
+                user, TransactionType.EXPENSE, curMonthStart, curMonthEnd
         );
         currentMonthExp = currentMonthExp != null ? currentMonthExp : BigDecimal.ZERO;
         summary.setCurrentMonthExpense(currentMonthExp);
 
-        Optional<Budget> budgetOpt = budgetRepository.findByMonthYear(currentYm.toString());
+        Optional<Budget> budgetOpt = budgetRepository.findByUserAndMonthYear(user, currentYm.toString());
         if (budgetOpt.isPresent() && budgetOpt.get().getMonthlyLimit().compareTo(BigDecimal.ZERO) > 0) {
             BigDecimal limit = budgetOpt.get().getMonthlyLimit();
             summary.setMonthlyBudgetLimit(limit);
@@ -190,13 +214,13 @@ public class TransactionServiceImpl implements TransactionService {
 
             if (percentage >= 100.0) {
                 summary.setAlertStatus("EXCEEDED");
-                summary.setAlertMessage(String.format("Critical: Monthly budget exceeded! Used %.1f%% of your $%.2f limit.", percentage, limit));
+                summary.setAlertMessage(String.format("Critical: Monthly budget exceeded! Used %.1f%% of your limit.", percentage));
             } else if (percentage >= 80.0) {
                 summary.setAlertStatus("WARNING");
-                summary.setAlertMessage(String.format("Warning: Approaching budget limit. Used %.1f%% of your $%.2f limit.", percentage, limit));
+                summary.setAlertMessage(String.format("Warning: Approaching budget limit. Used %.1f%% of your limit.", percentage));
             } else {
                 summary.setAlertStatus("OK");
-                summary.setAlertMessage(String.format("On track: Used %.1f%% of your $%.2f monthly budget.", percentage, limit));
+                summary.setAlertMessage(String.format("On track: Used %.1f%% of your monthly budget.", percentage));
             }
         } else {
             summary.setMonthlyBudgetLimit(BigDecimal.ZERO);
@@ -211,6 +235,7 @@ public class TransactionServiceImpl implements TransactionService {
     @Override
     @Transactional(readOnly = true)
     public byte[] exportTransactionsToCsv(
+            User user,
             LocalDate startDate,
             LocalDate endDate,
             String category,
@@ -223,22 +248,23 @@ public class TransactionServiceImpl implements TransactionService {
                 : null;
 
         List<Transaction> transactions = transactionRepository.findAllWithFilters(
-                startDate, endDate, sanitizedCategory, type, sanitizedSearch
+                user, startDate, endDate, sanitizedCategory, type, sanitizedSearch
         );
+
+        log.info("Exporting {} transactions to CSV for user [ID: {}]", transactions.size(), user.getId());
 
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              OutputStreamWriter osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
              CSVWriter writer = new CSVWriter(osw)) {
 
-            // CSV Header
-            writer.writeNext(new String[]{"ID", "Title", "Amount", "Type", "Category", "Transaction Date", "Notes", "Created At"});
+            writer.writeNext(new String[]{"ID", "Title", "Amount", "Currency", "Type", "Category", "Transaction Date", "Notes", "Created At"});
 
-            // Rows
             for (Transaction t : transactions) {
                 writer.writeNext(new String[]{
                         String.valueOf(t.getId()),
                         t.getTitle(),
                         t.getAmount().toPlainString(),
+                        user.getCurrency(),
                         t.getType().name(),
                         t.getCategory(),
                         t.getTransactionDate().toString(),
@@ -250,6 +276,7 @@ public class TransactionServiceImpl implements TransactionService {
             writer.flush();
             return baos.toByteArray();
         } catch (Exception e) {
+            log.error("Failed to generate CSV export", e);
             throw new RuntimeException("Failed to generate CSV export: " + e.getMessage(), e);
         }
     }
@@ -267,8 +294,9 @@ public class TransactionServiceImpl implements TransactionService {
         );
     }
 
-    private Transaction mapToEntity(TransactionRequestDTO dto) {
+    private Transaction mapToEntity(TransactionRequestDTO dto, User user) {
         return new Transaction(
+                user,
                 dto.getTitle().trim(),
                 dto.getAmount(),
                 dto.getType(),
@@ -278,4 +306,3 @@ public class TransactionServiceImpl implements TransactionService {
         );
     }
 }
-

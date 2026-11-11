@@ -1,11 +1,11 @@
 package com.expensetracker.service;
 
 import com.expensetracker.dto.BudgetDTO;
+import com.expensetracker.entity.User;
 
 public interface BudgetService {
 
-    BudgetDTO getBudgetForMonth(String monthYear);
+    BudgetDTO getBudgetForMonth(User user, String monthYear);
 
-    BudgetDTO setBudgetForMonth(BudgetDTO budgetDTO);
+    BudgetDTO setBudgetForMonth(User user, BudgetDTO budgetDTO);
 }
-

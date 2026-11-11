@@ -4,6 +4,8 @@ import com.expensetracker.dto.SummaryDTO;
 import com.expensetracker.dto.TransactionRequestDTO;
 import com.expensetracker.dto.TransactionResponseDTO;
 import com.expensetracker.entity.TransactionType;
+import com.expensetracker.entity.User;
+import com.expensetracker.service.AuthService;
 import com.expensetracker.service.TransactionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -25,46 +27,52 @@ import java.time.format.DateTimeFormatter;
 
 @RestController
 @RequestMapping("/api/transactions")
-@Tag(name = "Transactions", description = "Endpoints for managing expenses, income, summaries, and CSV data export")
+@Tag(name = "Transactions", description = "Endpoints for managing user expenses, income, summaries, and CSV data export")
 public class TransactionController {
 
     private final TransactionService transactionService;
+    private final AuthService authService;
 
-    public TransactionController(TransactionService transactionService) {
+    public TransactionController(TransactionService transactionService, AuthService authService) {
         this.transactionService = transactionService;
+        this.authService = authService;
     }
 
     @PostMapping
-    @Operation(summary = "Create a new transaction", description = "Adds a new income or expense transaction")
+    @Operation(summary = "Create a new transaction", description = "Adds a new income or expense transaction for the authenticated user")
     public ResponseEntity<TransactionResponseDTO> createTransaction(@Valid @RequestBody TransactionRequestDTO requestDTO) {
-        TransactionResponseDTO created = transactionService.createTransaction(requestDTO);
+        User user = authService.getCurrentAuthenticatedUser();
+        TransactionResponseDTO created = transactionService.createTransaction(requestDTO, user);
         return new ResponseEntity<>(created, HttpStatus.CREATED);
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get transaction by ID", description = "Retrieves a single transaction by its primary key")
+    @Operation(summary = "Get transaction by ID", description = "Retrieves a single transaction by ID owned by current user")
     public ResponseEntity<TransactionResponseDTO> getTransactionById(@PathVariable Long id) {
-        return ResponseEntity.ok(transactionService.getTransactionById(id));
+        User user = authService.getCurrentAuthenticatedUser();
+        return ResponseEntity.ok(transactionService.getTransactionById(id, user));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update an existing transaction", description = "Updates details of an existing transaction")
+    @Operation(summary = "Update an existing transaction", description = "Updates details of a transaction owned by current user")
     public ResponseEntity<TransactionResponseDTO> updateTransaction(
             @PathVariable Long id,
             @Valid @RequestBody TransactionRequestDTO requestDTO) {
-        return ResponseEntity.ok(transactionService.updateTransaction(id, requestDTO));
+        User user = authService.getCurrentAuthenticatedUser();
+        return ResponseEntity.ok(transactionService.updateTransaction(id, requestDTO, user));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete transaction", description = "Permanently removes a transaction record")
+    @Operation(summary = "Delete transaction", description = "Permanently removes a transaction owned by current user")
     public ResponseEntity<Void> deleteTransaction(@PathVariable Long id) {
-        transactionService.deleteTransaction(id);
+        User user = authService.getCurrentAuthenticatedUser();
+        transactionService.deleteTransaction(id, user);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping
     @Operation(summary = "List transactions with filters and pagination",
-               description = "Filter by date range, category, type, and keyword search across title and notes")
+               description = "Filter by date range, category, type, and search keyword for the current user")
     public ResponseEntity<Page<TransactionResponseDTO>> getTransactions(
             @Parameter(description = "Start date (YYYY-MM-DD)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
@@ -72,7 +80,7 @@ public class TransactionController {
             @Parameter(description = "End date (YYYY-MM-DD)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
 
-            @Parameter(description = "Category name (e.g. Food, Rent, Salary)")
+            @Parameter(description = "Category name")
             @RequestParam(required = false) String category,
 
             @Parameter(description = "Transaction type (INCOME or EXPENSE)")
@@ -93,27 +101,24 @@ public class TransactionController {
             @Parameter(description = "Sort direction (ASC or DESC)")
             @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
 
+        User user = authService.getCurrentAuthenticatedUser();
         Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy).and(Sort.by(direction, "id")));
         Page<TransactionResponseDTO> result = transactionService.getTransactions(
-                startDate, endDate, category, type, search, pageable
+                user, startDate, endDate, category, type, search, pageable
         );
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/summary")
     @Operation(summary = "Financial summary & budget analytics",
-               description = "Returns aggregated totals, net balance, category breakdown, monthly trends, and budget alerts")
+               description = "Aggregated totals, net balance, category breakdown, optimized trends, and budget alerts")
     public ResponseEntity<SummaryDTO> getSummary(
-            @Parameter(description = "Start date filter (optional)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-
-            @Parameter(description = "End date filter (optional)")
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-
-            @Parameter(description = "Budget month (YYYY-MM), defaults to current month")
             @RequestParam(required = false) String monthYear) {
 
-        SummaryDTO summary = transactionService.getSummary(startDate, endDate, monthYear);
+        User user = authService.getCurrentAuthenticatedUser();
+        SummaryDTO summary = transactionService.getSummary(user, startDate, endDate, monthYear);
         return ResponseEntity.ok(summary);
     }
 
@@ -127,7 +132,8 @@ public class TransactionController {
             @RequestParam(required = false) TransactionType type,
             @RequestParam(required = false) String search) {
 
-        byte[] csvBytes = transactionService.exportTransactionsToCsv(startDate, endDate, category, type, search);
+        User user = authService.getCurrentAuthenticatedUser();
+        byte[] csvBytes = transactionService.exportTransactionsToCsv(user, startDate, endDate, category, type, search);
 
         String filename = "expenses_export_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".csv";
 
@@ -137,4 +143,3 @@ public class TransactionController {
                 .body(csvBytes);
     }
 }
-

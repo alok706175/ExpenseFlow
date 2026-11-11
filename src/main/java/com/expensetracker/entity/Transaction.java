@@ -1,5 +1,6 @@
 package com.expensetracker.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
@@ -14,15 +15,20 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "transactions", indexes = {
-    @Index(name = "idx_tx_date", columnList = "transactionDate"),
-    @Index(name = "idx_tx_type", columnList = "type"),
-    @Index(name = "idx_tx_category", columnList = "category")
+    @Index(name = "idx_tx_user_date", columnList = "user_id, transactionDate"),
+    @Index(name = "idx_tx_user_type", columnList = "user_id, type"),
+    @Index(name = "idx_tx_user_category", columnList = "user_id, category")
 })
 public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnore
+    private User user;
 
     @NotBlank(message = "Title is required")
     @Size(max = 100, message = "Title cannot exceed 100 characters")
@@ -62,7 +68,8 @@ public class Transaction {
     public Transaction() {
     }
 
-    public Transaction(String title, BigDecimal amount, TransactionType type, String category, LocalDate transactionDate, String notes) {
+    public Transaction(User user, String title, BigDecimal amount, TransactionType type, String category, LocalDate transactionDate, String notes) {
+        this.user = user;
         this.title = title;
         this.amount = amount;
         this.type = type;
@@ -71,13 +78,20 @@ public class Transaction {
         this.notes = notes;
     }
 
-    // Getters and Setters
     public Long getId() {
         return id;
     }
 
     public void setId(Long id) {
         this.id = id;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 
     public String getTitle() {
@@ -144,4 +158,3 @@ public class Transaction {
         this.updatedAt = updatedAt;
     }
 }
-
