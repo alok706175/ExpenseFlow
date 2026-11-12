@@ -1,4 +1,4 @@
-# ExpenseFlow &bull; Enterprise Personal Expense Tracker
+# ExpenseFlow &bull; A Personal Expense Tracker
 
 A full-stack, production-ready Personal Expense Tracker Web Application built with **Java 17+**, **Spring Boot 3.x**, **Spring Data JPA**, **Hibernate**, **MySQL** (with **H2 in-memory database** for instant zero-config local testing), and a modern, responsive Single Page Interface powered by **Tailwind CSS** and **Chart.js**.
 
