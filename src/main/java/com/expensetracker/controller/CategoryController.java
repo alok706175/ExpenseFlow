@@ -1,4 +1,4 @@
-﻿package com.expensetracker.controller;
+package com.expensetracker.controller;
 
 import com.expensetracker.dto.CategoryDTO;
 import com.expensetracker.entity.User;

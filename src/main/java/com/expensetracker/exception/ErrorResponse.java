@@ -1,4 +1,4 @@
-﻿package com.expensetracker.exception;
+package com.expensetracker.exception;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 

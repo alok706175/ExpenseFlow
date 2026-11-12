@@ -1,4 +1,4 @@
-﻿package com.expensetracker.service;
+package com.expensetracker.service;
 
 import com.expensetracker.dto.AuthResponseDTO;
 import com.expensetracker.dto.RegisterRequestDTO;

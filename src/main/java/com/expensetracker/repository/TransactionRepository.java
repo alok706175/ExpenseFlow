@@ -1,4 +1,4 @@
-﻿package com.expensetracker.repository;
+package com.expensetracker.repository;
 
 import com.expensetracker.entity.Transaction;
 import com.expensetracker.entity.TransactionType;

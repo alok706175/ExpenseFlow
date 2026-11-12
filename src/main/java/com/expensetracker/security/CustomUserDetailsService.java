@@ -1,4 +1,4 @@
-﻿package com.expensetracker.security;
+package com.expensetracker.security;
 
 import com.expensetracker.entity.User;
 import com.expensetracker.repository.UserRepository;

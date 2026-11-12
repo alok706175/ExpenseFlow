@@ -1,4 +1,4 @@
-﻿package com.expensetracker.entity;
+package com.expensetracker.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;

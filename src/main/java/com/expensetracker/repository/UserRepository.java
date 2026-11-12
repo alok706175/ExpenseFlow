@@ -1,4 +1,4 @@
-﻿package com.expensetracker.repository;
+package com.expensetracker.repository;
 
 import com.expensetracker.entity.User;
 import org.springframework.data.jpa.repository.JpaRepository;
