@@ -106,6 +106,11 @@ function setupEventListeners() {
         const el = document.getElementById(id);
         if (el) {
             el.addEventListener('change', () => {
+                if (id === 'filterCategory' && el.value === '__MANAGE__') {
+                    openCategoryModal();
+                    el.value = '';
+                    return;
+                }
                 currentPage = 0;
                 loadDashboard();
             });
@@ -179,7 +184,9 @@ function setLoggedInUI(isLoggedIn) {
 /**
  * Category Management
  */
-async function loadCategories() {
+let lastSelectedCategory = '';
+
+async function loadCategories(selectedCategoryName = null) {
     try {
         const response = await authFetch(CATEGORY_API);
         if (!response.ok) return;
@@ -190,7 +197,7 @@ async function loadCategories() {
         const filterCategory = document.getElementById('filterCategory');
 
         const currentFilterVal = filterCategory.value;
-        const currentTxVal = txCategory.value;
+        const currentTxVal = selectedCategoryName || txCategory.value;
 
         filterCategory.innerHTML = '<option value="">All Categories</option>';
         txCategory.innerHTML = '';
@@ -207,8 +214,31 @@ async function loadCategories() {
             txCategory.appendChild(opt2);
         });
 
-        if (currentFilterVal) filterCategory.value = currentFilterVal;
-        if (currentTxVal) txCategory.value = currentTxVal;
+        // Add Option to create custom category directly from the transaction category list
+        const customTxOpt = document.createElement('option');
+        customTxOpt.value = '__NEW__';
+        customTxOpt.textContent = '✨ + Add Custom Category...';
+        customTxOpt.className = 'font-semibold text-emerald-600 bg-emerald-50';
+        txCategory.appendChild(customTxOpt);
+
+        // Add Option to manage categories from filter list
+        const manageFilterOpt = document.createElement('option');
+        manageFilterOpt.value = '__MANAGE__';
+        manageFilterOpt.textContent = '⚙️ Manage / Add Categories...';
+        manageFilterOpt.className = 'font-semibold text-emerald-600 bg-emerald-50';
+        filterCategory.appendChild(manageFilterOpt);
+
+        if (currentFilterVal && currentFilterVal !== '__MANAGE__') {
+            filterCategory.value = currentFilterVal;
+        }
+
+        if (currentTxVal && currentTxVal !== '__NEW__') {
+            txCategory.value = currentTxVal;
+            lastSelectedCategory = currentTxVal;
+        } else if (categories.length > 0) {
+            txCategory.value = categories[0].name;
+            lastSelectedCategory = categories[0].name;
+        }
 
         // Populate Category Manager Modal List
         const modalList = document.getElementById('categoryModalList');
@@ -221,7 +251,7 @@ async function loadCategories() {
                         <span class="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded ${c.type === 'EXPENSE' ? 'bg-rose-50 text-rose-600' : 'bg-emerald-50 text-emerald-600'}">${c.type}</span>
                     </div>
                     ${c.custom ? `
-                        <button onclick="deleteCustomCategory(${c.id})" class="text-slate-400 hover:text-rose-600 p-1">
+                        <button onclick="deleteCustomCategory(${c.id})" class="text-slate-400 hover:text-rose-600 p-1" title="Delete Category">
                             <i class="fa-regular fa-trash-can"></i>
                         </button>
                     ` : '<span class="text-[10px] text-slate-400 font-semibold">Default</span>'}
@@ -231,6 +261,103 @@ async function loadCategories() {
 
     } catch (err) {
         console.error('Failed to load categories:', err);
+    }
+}
+
+function handleTxCategoryChange(selectEl) {
+    if (selectEl.value === '__NEW__') {
+        openQuickCategoryAdd();
+        if (lastSelectedCategory && lastSelectedCategory !== '__NEW__') {
+            selectEl.value = lastSelectedCategory;
+        }
+    } else {
+        lastSelectedCategory = selectEl.value;
+        cancelQuickCategory();
+    }
+}
+
+function openQuickCategoryAdd() {
+    const box = document.getElementById('quickCategoryBox');
+    if (!box) return;
+    box.classList.remove('hidden');
+    const input = document.getElementById('quickCategoryName');
+    input.value = '';
+    const err = document.getElementById('quickCategoryError');
+    if (err) err.classList.add('hidden');
+    input.focus();
+}
+
+function toggleQuickCategoryAdd() {
+    const box = document.getElementById('quickCategoryBox');
+    if (!box) return;
+    if (box.classList.contains('hidden')) {
+        openQuickCategoryAdd();
+    } else {
+        cancelQuickCategory();
+    }
+}
+
+function cancelQuickCategory() {
+    const box = document.getElementById('quickCategoryBox');
+    if (!box) return;
+    box.classList.add('hidden');
+    const err = document.getElementById('quickCategoryError');
+    if (err) err.classList.add('hidden');
+}
+
+async function saveQuickCategory() {
+    const input = document.getElementById('quickCategoryName');
+    const name = input.value.trim();
+    const err = document.getElementById('quickCategoryError');
+    const btn = document.getElementById('quickCategorySaveBtn');
+
+    if (!name) {
+        if (err) {
+            err.textContent = 'Please enter a category name.';
+            err.classList.remove('hidden');
+        }
+        input.focus();
+        return;
+    }
+
+    const type = document.getElementById('txType').value || 'EXPENSE';
+    const payload = {
+        name: name,
+        type: type,
+        color: type === 'INCOME' ? '#10b981' : '#f59e0b',
+        icon: 'fa-tag'
+    };
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i>';
+
+    try {
+        const response = await authFetch(CATEGORY_API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.message || 'Failed to create category');
+        }
+
+        const newCat = await response.json();
+        await loadCategories(newCat.name);
+        lastSelectedCategory = newCat.name;
+        cancelQuickCategory();
+        showToast('Category Created', `Custom category '${newCat.name}' created and selected!`, 'success');
+    } catch (e) {
+        if (err) {
+            err.textContent = e.message;
+            err.classList.remove('hidden');
+        } else {
+            showToast('Error', e.message, 'error');
+        }
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = 'Add';
     }
 }
 
@@ -675,6 +802,7 @@ function openTransactionModal(editMode = false) {
     const submitBtn = document.getElementById('modalSubmitBtn');
     submitBtn.disabled = false;
     submitBtn.textContent = editMode ? 'Update' : 'Save Transaction';
+    cancelQuickCategory();
 
     if (!editMode) {
         document.getElementById('txForm').reset();
@@ -686,6 +814,7 @@ function openTransactionModal(editMode = false) {
 }
 
 function closeTransactionModal() {
+    cancelQuickCategory();
     document.getElementById('txModal').classList.add('hidden');
 }
 
