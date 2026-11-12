@@ -16,6 +16,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 
 @Component
 public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
@@ -57,11 +58,15 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             if (existingUser.getProviderId() == null && sub != null) {
                 existingUser.setProviderId(sub);
             }
+            if (existingUser.getPassword() == null || existingUser.getPassword().trim().isEmpty()) {
+                existingUser.setPassword("{OAUTH2_GOOGLE}" + UUID.randomUUID());
+            }
             return userRepository.save(existingUser);
         }).orElseGet(() -> {
             log.info("Auto-registering new Google OAuth2 user: {}", normalizedEmail);
             String displayName = (name != null && !name.trim().isEmpty()) ? name.trim() : normalizedEmail.split("@")[0];
             User newUser = new User(displayName, normalizedEmail, "GOOGLE", sub, "INR");
+            newUser.setPassword("{OAUTH2_GOOGLE}" + UUID.randomUUID());
             return userRepository.save(newUser);
         });
 
@@ -81,4 +86,3 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }
-

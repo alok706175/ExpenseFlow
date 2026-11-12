@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Size;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {
@@ -30,7 +31,7 @@ public class User {
     private String email;
 
     @JsonIgnore
-    @Column(nullable = true) // Nullable for OAuth2 users who authenticate via Google
+    @Column(nullable = false) // Stored as non-null dummy hash for OAuth2 to satisfy existing database constraints
     private String password;
 
     @Column(nullable = false, length = 20)
@@ -49,6 +50,13 @@ public class User {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @PrePersist
+    public void ensurePasswordNotNull() {
+        if (this.password == null || this.password.trim().isEmpty()) {
+            this.password = "{OAUTH2_GOOGLE}" + UUID.randomUUID();
+        }
+    }
+
     public User() {
     }
 
@@ -64,6 +72,7 @@ public class User {
     public User(String name, String email, String authProvider, String providerId, String currency) {
         this.name = name;
         this.email = email;
+        this.password = "{OAUTH2_GOOGLE}" + UUID.randomUUID();
         this.authProvider = authProvider;
         this.providerId = providerId;
         this.currency = (currency != null && !currency.trim().isEmpty()) ? currency : "INR";
