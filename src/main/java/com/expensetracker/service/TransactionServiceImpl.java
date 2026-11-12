@@ -124,17 +124,9 @@ public class TransactionServiceImpl implements TransactionService {
     public SummaryDTO getSummary(User user, LocalDate startDate, LocalDate endDate, String monthYear) {
         SummaryDTO summary = new SummaryDTO();
 
-        // 1. Calculate Aggregated Income and Expense
-        BigDecimal totalIncome;
-        BigDecimal totalExpense;
-
-        if (startDate != null && endDate != null) {
-            totalIncome = transactionRepository.sumAmountByTypeAndDateRange(user, TransactionType.INCOME, startDate, endDate);
-            totalExpense = transactionRepository.sumAmountByTypeAndDateRange(user, TransactionType.EXPENSE, startDate, endDate);
-        } else {
-            totalIncome = transactionRepository.sumAmountByType(user, TransactionType.INCOME);
-            totalExpense = transactionRepository.sumAmountByType(user, TransactionType.EXPENSE);
-        }
+        // 1. Calculate Aggregated Income and Expense with support for single or dual date bounds
+        BigDecimal totalIncome = transactionRepository.sumAmountByTypeAndDateRange(user, TransactionType.INCOME, startDate, endDate);
+        BigDecimal totalExpense = transactionRepository.sumAmountByTypeAndDateRange(user, TransactionType.EXPENSE, startDate, endDate);
 
         totalIncome = totalIncome != null ? totalIncome : BigDecimal.ZERO;
         totalExpense = totalExpense != null ? totalExpense : BigDecimal.ZERO;
@@ -143,10 +135,8 @@ public class TransactionServiceImpl implements TransactionService {
         summary.setTotalExpense(totalExpense);
         summary.setBalance(totalIncome.subtract(totalExpense));
 
-        // 2. Category Breakdown
-        List<Object[]> categoryBreakdown = (startDate != null && endDate != null)
-                ? transactionRepository.findCategoryExpenseBreakdownByDateRange(user, startDate, endDate)
-                : transactionRepository.findCategoryExpenseBreakdown(user);
+        // 2. Category Breakdown with optional single/dual date bounds
+        List<Object[]> categoryBreakdown = transactionRepository.findCategoryExpenseBreakdownByDateRange(user, startDate, endDate);
 
         Map<String, BigDecimal> categoryMap = new LinkedHashMap<>();
         String topCategory = "N/A";
@@ -267,11 +257,14 @@ public class TransactionServiceImpl implements TransactionService {
 
         log.info("Exporting {} transactions to CSV for user [ID: {}]", transactions.size(), user.getId());
 
-        try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-             OutputStreamWriter osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
-             CSVWriter writer = new CSVWriter(osw)) {
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            // Write UTF-8 BOM so Microsoft Excel on Windows renders UTF-8 characters without corruption
+            baos.write(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
 
-            writer.writeNext(new String[]{"ID", "Title", "Amount", "Currency", "Type", "Category", "Transaction Date", "Notes", "Created At"});
+            try (OutputStreamWriter osw = new OutputStreamWriter(baos, StandardCharsets.UTF_8);
+                 CSVWriter writer = new CSVWriter(osw)) {
+
+                writer.writeNext(new String[]{"ID", "Title", "Amount", "Currency", "Type", "Category", "Transaction Date", "Notes", "Created At"});
 
             for (Transaction t : transactions) {
                 writer.writeNext(new String[]{

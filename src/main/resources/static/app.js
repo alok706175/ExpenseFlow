@@ -120,13 +120,27 @@ function setupEventListeners() {
     const currencySelector = document.getElementById('userCurrencySelector');
     if (currencySelector) {
         currencySelector.addEventListener('change', async (e) => {
-            userCurrency = e.target.value;
+            const newCurrency = e.target.value;
+            userCurrency = newCurrency;
             if (currentUser) {
-                currentUser.currency = userCurrency;
+                currentUser.currency = newCurrency;
                 localStorage.setItem('expense_user', JSON.stringify(currentUser));
+                try {
+                    await authFetch('/api/auth/profile', {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            name: currentUser.name,
+                            currency: newCurrency
+                        })
+                    });
+                } catch (err) {
+                    console.error('Failed to sync currency to server:', err);
+                }
             }
             updateCurrencySymbols();
             await loadDashboard();
+            showToast('Currency Updated', `Preferred currency set to ${newCurrency}.`, 'info');
         });
     }
 }
@@ -412,12 +426,13 @@ async function handleCreateCategory(event) {
 }
 
 async function deleteCustomCategory(id) {
-    if (!confirm('Are you sure you want to delete this custom category?')) return;
+    if (!confirm('Are you sure you want to delete this custom category? Note: Existing recorded transactions will keep this category name.')) return;
     try {
         const response = await authFetch(`${CATEGORY_API}/${id}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Cannot delete category');
         showToast('Deleted', 'Category removed.', 'info');
-        loadCategories();
+        await loadCategories();
+        await loadDashboard();
     } catch (err) {
         showToast('Error', err.message, 'error');
     }
@@ -648,12 +663,26 @@ function renderPaginationControls() {
 
     let html = `
         <button onclick="goToPage(${currentPage - 1})" ${currentPage === 0 ? 'disabled' : ''}
-                class="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                class="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Previous Page">
             <i class="fa-solid fa-chevron-left"></i>
         </button>
     `;
 
-    for (let p = 0; p < totalPages; p++) {
+    // Sliding window of max 5 visible pages to prevent overflow
+    const delta = 2;
+    const startPage = Math.max(0, currentPage - delta);
+    const endPage = Math.min(totalPages - 1, currentPage + delta);
+
+    if (startPage > 0) {
+        html += `
+            <button onclick="goToPage(0)" class="px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">1</button>
+        `;
+        if (startPage > 1) {
+            html += `<span class="px-1 text-slate-400 text-xs select-none">...</span>`;
+        }
+    }
+
+    for (let p = startPage; p <= endPage; p++) {
         const isCurrent = p === currentPage;
         html += `
             <button onclick="goToPage(${p})"
@@ -663,9 +692,18 @@ function renderPaginationControls() {
         `;
     }
 
+    if (endPage < totalPages - 1) {
+        if (endPage < totalPages - 2) {
+            html += `<span class="px-1 text-slate-400 text-xs select-none">...</span>`;
+        }
+        html += `
+            <button onclick="goToPage(${totalPages - 1})" class="px-3 py-1 text-xs font-semibold rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-100">${totalPages}</button>
+        `;
+    }
+
     html += `
         <button onclick="goToPage(${currentPage + 1})" ${currentPage >= totalPages - 1 ? 'disabled' : ''}
-                class="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                class="px-2.5 py-1 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed" title="Next Page">
             <i class="fa-solid fa-chevron-right"></i>
         </button>
     `;
@@ -763,16 +801,30 @@ function renderCategoryChart(categoryMap) {
             type: 'doughnut',
             data: {
                 labels: ['No Expenses'],
-                datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }]
+                datasets: [{ data: [1], backgroundColor: ['#f1f5f9'], borderWidth: 0 }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '70%',
                 plugins: {
                     legend: { display: false },
                     tooltip: { enabled: false }
                 }
-            }
+            },
+            plugins: [{
+                id: 'emptyDoughnutText',
+                afterDraw: (chart) => {
+                    const { ctx, width, height } = chart;
+                    ctx.save();
+                    ctx.font = '600 12px Inter, system-ui, sans-serif';
+                    ctx.fillStyle = '#94a3b8';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText('No Expenses Yet', width / 2, height / 2);
+                    ctx.restore();
+                }
+            }]
         });
         return;
     }
@@ -978,6 +1030,19 @@ async function openBudgetModal() {
 
 function closeBudgetModal() {
     document.getElementById('budgetModal').classList.add('hidden');
+}
+
+async function handleBudgetMonthChange(monthYear) {
+    if (!monthYear || !/^\d{4}-(0[1-9]|1[0-2])$/.test(monthYear)) return;
+    try {
+        const response = await authFetch(`${BUDGET_API}?monthYear=${monthYear}`);
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('budgetLimit').value = (data.monthlyLimit && data.monthlyLimit > 0) ? data.monthlyLimit : '';
+        }
+    } catch (err) {
+        console.error('Failed to fetch budget for selected month:', err);
+    }
 }
 
 async function handleBudgetSubmit(event) {

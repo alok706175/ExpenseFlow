@@ -58,7 +58,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user = :user AND t.type = :type")
     BigDecimal sumAmountByType(@Param("user") User user, @Param("type") TransactionType type);
 
-    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user = :user AND t.type = :type AND t.transactionDate >= :startDate AND t.transactionDate <= :endDate")
+    @Query("SELECT COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user = :user AND t.type = :type AND " +
+           "(:startDate IS NULL OR t.transactionDate >= :startDate) AND " +
+           "(:endDate IS NULL OR t.transactionDate <= :endDate)")
     BigDecimal sumAmountByTypeAndDateRange(
             @Param("user") User user,
             @Param("type") TransactionType type,
@@ -69,7 +71,9 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     @Query("SELECT t.category, COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user = :user AND t.type = com.expensetracker.entity.TransactionType.EXPENSE GROUP BY t.category ORDER BY SUM(t.amount) DESC")
     List<Object[]> findCategoryExpenseBreakdown(@Param("user") User user);
 
-    @Query("SELECT t.category, COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user = :user AND t.type = com.expensetracker.entity.TransactionType.EXPENSE AND t.transactionDate >= :startDate AND t.transactionDate <= :endDate GROUP BY t.category ORDER BY SUM(t.amount) DESC")
+    @Query("SELECT t.category, COALESCE(SUM(t.amount), 0) FROM Transaction t WHERE t.user = :user AND t.type = com.expensetracker.entity.TransactionType.EXPENSE AND " +
+           "(:startDate IS NULL OR t.transactionDate >= :startDate) AND " +
+           "(:endDate IS NULL OR t.transactionDate <= :endDate) GROUP BY t.category ORDER BY SUM(t.amount) DESC")
     List<Object[]> findCategoryExpenseBreakdownByDateRange(
             @Param("user") User user,
             @Param("startDate") LocalDate startDate,
