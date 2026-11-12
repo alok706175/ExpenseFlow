@@ -105,17 +105,30 @@ function setupEventListeners() {
     ['filterType', 'filterCategory', 'filterStartDate', 'filterEndDate'].forEach(id => {
         const el = document.getElementById(id);
         if (el) {
-            el.addEventListener('change', () => {
+            el.addEventListener('change', async () => {
                 if (id === 'filterCategory' && el.value === '__MANAGE__') {
                     openCategoryModal();
                     el.value = '';
                     return;
                 }
                 currentPage = 0;
-                loadDashboard();
+                await loadDashboard();
             });
         }
     });
+
+    const currencySelector = document.getElementById('userCurrencySelector');
+    if (currencySelector) {
+        currencySelector.addEventListener('change', async (e) => {
+            userCurrency = e.target.value;
+            if (currentUser) {
+                currentUser.currency = userCurrency;
+                localStorage.setItem('expense_user', JSON.stringify(currentUser));
+            }
+            updateCurrencySymbols();
+            await loadDashboard();
+        });
+    }
 }
 
 function updateCurrencySymbols() {
@@ -130,13 +143,16 @@ function updateCurrencySymbols() {
 }
 
 /**
- * Authorized Fetch Wrapper
+ * Authorized Fetch Wrapper with strict no-cache to guarantee live auto-updates
  */
 async function authFetch(url, options = {}) {
     options.headers = options.headers || {};
     if (authToken) {
         options.headers['Authorization'] = `Bearer ${authToken}`;
     }
+    options.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate';
+    options.headers['Pragma'] = 'no-cache';
+    options.cache = 'no-store';
 
     const response = await fetch(url, options);
 
@@ -875,8 +891,28 @@ async function handleTransactionSubmit(event) {
         }
 
         closeTransactionModal();
+
+        // If new transaction was added, reset pagination to page 0
+        if (!isEdit) {
+            currentPage = 0;
+            // Clear conflicting search or filters so the new entry isn't filtered out
+            const activeSearch = document.getElementById('filterSearch').value.trim();
+            const activeType = document.getElementById('filterType').value;
+            const activeCategory = document.getElementById('filterCategory').value;
+            if (activeSearch || 
+                (activeType && activeType !== payload.type) || 
+                (activeCategory && activeCategory !== payload.category)) {
+                document.getElementById('filterSearch').value = '';
+                document.getElementById('filterType').value = '';
+                document.getElementById('filterCategory').value = '';
+                document.getElementById('filterStartDate').value = '';
+                document.getElementById('filterEndDate').value = '';
+            }
+        }
+
+        // Await live dashboard refresh so updated ledger rows, balance, KPIs & charts show up instantly
+        await loadDashboard();
         showToast('Success', `Transaction ${isEdit ? 'updated' : 'created'} successfully!`, 'success');
-        loadDashboard();
 
     } catch (err) {
         const errEl = document.getElementById('modalError');
@@ -891,13 +927,29 @@ async function handleTransactionSubmit(event) {
 async function deleteTransaction(id) {
     if (!confirm('Are you sure you want to permanently delete this transaction?')) return;
 
+    // Instant optimistic visual feedback: row immediately dims and disables
+    const row = document.querySelector(`button[onclick="deleteTransaction(${id})"]`)?.closest('tr');
+    if (row) {
+        row.classList.add('opacity-30', 'pointer-events-none', 'bg-rose-50');
+    }
+
     try {
         const response = await authFetch(`${API_BASE}/${id}`, { method: 'DELETE' });
         if (!response.ok) throw new Error('Failed to delete transaction');
 
+        // If last row on page was deleted, step back one page
+        const remainingRows = document.querySelectorAll('#transactionsTableBody tr:not(.opacity-30)').length;
+        if (remainingRows <= 1 && currentPage > 0) {
+            currentPage--;
+        }
+
+        // Auto-refresh the dashboard in real time
+        await loadDashboard();
         showToast('Deleted', 'Transaction removed.', 'info');
-        loadDashboard();
     } catch (err) {
+        if (row) {
+            row.classList.remove('opacity-30', 'pointer-events-none', 'bg-rose-50');
+        }
         showToast('Error', err.message, 'error');
     }
 }
@@ -945,8 +997,8 @@ async function handleBudgetSubmit(event) {
         if (!response.ok) throw new Error('Failed to save monthly budget');
 
         closeBudgetModal();
+        await loadDashboard();
         showToast('Budget Saved', `Monthly budget updated to ${formatCurrency(payload.monthlyLimit)}.`, 'success');
-        loadDashboard();
     } catch (err) {
         showToast('Error', err.message, 'error');
     }
@@ -1170,8 +1222,9 @@ async function confirmDeleteHistory() {
 
         const data = await response.json();
         closeClearHistoryModal();
+        currentPage = 0;
+        await loadDashboard();
         showToast('History Cleared', data.message || `${data.deletedCount} transaction(s) deleted.`, 'info');
-        loadDashboard();
     } catch (err) {
         errEl.textContent = err.message;
         errEl.classList.remove('hidden');
