@@ -1,4 +1,4 @@
-package com.expensetracker.service;
+﻿package com.expensetracker.service;
 
 import com.expensetracker.dto.SummaryDTO;
 import com.expensetracker.dto.TransactionRequestDTO;
@@ -26,6 +26,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -103,8 +104,12 @@ class TransactionServiceTest {
         when(transactionRepository.findTrendsDataSince(eq(testUser), any(LocalDate.class))).thenReturn(Collections.emptyList());
 
         // Target month expense is 32000 against a budget of 30000 (exceeded)
-        when(transactionRepository.sumAmountByTypeAndDateRange(eq(testUser), eq(TransactionType.EXPENSE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(new BigDecimal("32000.00"));
+        when(transactionRepository.sumAmountByTypeAndDateRange(
+                eq(testUser),
+                eq(TransactionType.EXPENSE),
+                any(LocalDate.class),
+                any(LocalDate.class)
+        )).thenReturn(new BigDecimal("32000.00"));
 
         Budget budget = new Budget(testUser, currentYm.toString(), new BigDecimal("30000.00"));
         when(budgetRepository.findByUserAndMonthYear(testUser, currentYm.toString())).thenReturn(Optional.of(budget));

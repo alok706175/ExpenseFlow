@@ -1,4 +1,4 @@
-package com.expensetracker.config;
+﻿package com.expensetracker.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.lang.NonNull;

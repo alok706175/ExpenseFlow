@@ -1,4 +1,4 @@
-package com.expensetracker.entity;
+﻿package com.expensetracker.entity;
 
 public enum TransactionType {
     INCOME,

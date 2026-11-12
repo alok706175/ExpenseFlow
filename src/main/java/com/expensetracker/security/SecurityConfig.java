@@ -1,4 +1,4 @@
-package com.expensetracker.security;
+﻿package com.expensetracker.security;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,14 +71,14 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 // Google OAuth2 Login integration with custom success & failure handlers
-                .oauth2Login(oauth2 -> oauth2
-                        .successHandler(oAuth2SuccessHandler)
-                        .failureHandler((request, response, exception) -> {
-                            log.error("OAuth2 Login Failed: {}", exception.getMessage());
-                            String errMsg = "Google OAuth login failed: " + exception.getMessage();
-                            response.sendRedirect("/index.html?error=" + URLEncoder.encode(errMsg, StandardCharsets.UTF_8));
-                        })
-                )
+                .oauth2Login(oauth2 -> {
+                    oauth2.successHandler(oAuth2SuccessHandler);
+                    oauth2.failureHandler((request, response, exception) -> {
+                        log.error("OAuth2 Login Failed: {}", exception.getMessage());
+                        String errMsg = "Google OAuth login failed: " + exception.getMessage();
+                        response.sendRedirect("/index.html?error=" + URLEncoder.encode(errMsg, StandardCharsets.UTF_8));
+                    });
+                })
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

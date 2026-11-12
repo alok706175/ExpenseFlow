@@ -1,4 +1,4 @@
-package com.expensetracker.exception;
+﻿package com.expensetracker.exception;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -59,9 +59,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             @NonNull HttpStatusCode status,
             @NonNull WebRequest request) {
 
+        Throwable cause = ex.getMostSpecificCause();
+        String detailMsg = (cause != null) ? cause.getMessage() : ex.getMessage();
         ErrorResponse errorResponse = new ErrorResponse(
                 HttpStatus.BAD_REQUEST.value(),
-                "Malformed JSON request or invalid parameter type: " + ex.getMostSpecificCause().getMessage()
+                "Malformed JSON request or invalid parameter type: " + detailMsg
         );
 
         return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);

@@ -1,4 +1,4 @@
-package com.expensetracker.service;
+﻿package com.expensetracker.service;
 
 import com.expensetracker.dto.AuthRequestDTO;
 import com.expensetracker.dto.AuthResponseDTO;
@@ -70,9 +70,8 @@ public class AuthServiceImpl implements AuthService {
         String email = loginDTO.getEmail().trim().toLowerCase();
 
         try {
-            Authentication authentication = authenticationManager.authenticate(
-                    new UsernamePasswordAuthenticationToken(email, loginDTO.getPassword())
-            );
+            Authentication authToken = new UsernamePasswordAuthenticationToken(email, loginDTO.getPassword());
+            Authentication authentication = authenticationManager.authenticate(authToken);
 
             CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
             User user = userDetails.getUser();
