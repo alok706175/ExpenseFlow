@@ -1,4 +1,4 @@
-﻿package com.expensetracker.exception;
+package com.expensetracker.exception;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
