@@ -20,11 +20,13 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.lang.NonNull;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Objects;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -100,10 +102,11 @@ public class TransactionController {
             @RequestParam(defaultValue = "transactionDate") String sortBy,
 
             @Parameter(description = "Sort direction (ASC or DESC)")
-            @RequestParam(defaultValue = "DESC") Sort.Direction direction) {
+            @RequestParam(defaultValue = "DESC") @NonNull Sort.Direction direction) {
 
         User user = authService.getCurrentAuthenticatedUser();
-        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy).and(Sort.by(direction, "id")));
+        Sort.Direction sortDir = Objects.requireNonNull(direction);
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDir, sortBy).and(Sort.by(sortDir, "id")));
         Page<TransactionResponseDTO> result = transactionService.getTransactions(
                 user, startDate, endDate, category, type, search, pageable
         );
@@ -158,10 +161,11 @@ public class TransactionController {
         byte[] pdfBytes = transactionService.exportTransactionsToPdf(user, startDate, endDate, category, type, search);
 
         String filename = "expenses_statement_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".pdf";
+        MediaType pdfMediaType = Objects.requireNonNull(MediaType.APPLICATION_PDF);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .contentType(MediaType.APPLICATION_PDF)
+                .contentType(pdfMediaType)
                 .body(pdfBytes);
     }
 

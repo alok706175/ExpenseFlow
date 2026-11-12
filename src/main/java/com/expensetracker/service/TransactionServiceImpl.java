@@ -45,6 +45,7 @@ import java.util.*;
 
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class TransactionServiceImpl implements TransactionService {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionServiceImpl.class);

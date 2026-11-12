@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;

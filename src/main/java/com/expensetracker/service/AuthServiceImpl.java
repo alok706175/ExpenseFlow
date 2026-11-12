@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class AuthServiceImpl implements AuthService {
 
     private static final Logger log = LoggerFactory.getLogger(AuthServiceImpl.class);

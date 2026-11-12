@@ -27,6 +27,7 @@ public class ExpenseTrackerApplication {
      * No demo user or dummy transactions are created.
      */
     @Bean
+    @SuppressWarnings("null")
     public CommandLineRunner seedDefaultCategories(CategoryRepository categoryRepo) {
         return args -> {
             if (categoryRepo.count() == 0) {
