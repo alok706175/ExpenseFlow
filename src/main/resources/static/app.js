@@ -672,7 +672,9 @@ function renderCategoryChart(categoryMap) {
 function openTransactionModal(editMode = false) {
     document.getElementById('modalError').classList.add('hidden');
     document.getElementById('modalTitle').textContent = editMode ? 'Edit Transaction' : 'Add Transaction';
-    document.getElementById('modalSubmitBtn').textContent = editMode ? 'Update' : 'Save Transaction';
+    const submitBtn = document.getElementById('modalSubmitBtn');
+    submitBtn.disabled = false;
+    submitBtn.textContent = editMode ? 'Update' : 'Save Transaction';
 
     if (!editMode) {
         document.getElementById('txForm').reset();
@@ -711,6 +713,8 @@ async function handleTransactionSubmit(event) {
     event.preventDefault();
     const id = document.getElementById('txId').value;
     const isEdit = Boolean(id);
+    const submitBtn = document.getElementById('modalSubmitBtn');
+    const originalText = isEdit ? 'Update' : 'Save Transaction';
 
     const payload = {
         title: document.getElementById('txTitle').value.trim(),
@@ -723,6 +727,10 @@ async function handleTransactionSubmit(event) {
 
     const url = isEdit ? `${API_BASE}/${id}` : API_BASE;
     const method = isEdit ? 'PUT' : 'POST';
+
+    // Show "Saving..." loading state and disable button to prevent double-submit
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Saving...';
 
     try {
         const response = await authFetch(url, {
@@ -745,6 +753,9 @@ async function handleTransactionSubmit(event) {
         const errEl = document.getElementById('modalError');
         errEl.textContent = err.message;
         errEl.classList.remove('hidden');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = originalText;
     }
 }
 
