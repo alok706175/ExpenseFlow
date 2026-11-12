@@ -1,5 +1,7 @@
 package com.expensetracker.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +22,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -27,6 +31,8 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    private static final Logger log = LoggerFactory.getLogger(SecurityConfig.class);
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
@@ -47,10 +53,11 @@ public class SecurityConfig {
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .csrf(AbstractHttpConfigurer::disable)
                 .headers(headers -> headers.frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)) // H2 Console support
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                // SessionCreationPolicy.IF_REQUIRED is required for OAuth2 authorization flow state storage
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         // Public Frontend static resources
-                        .requestMatchers("/", "/index.html", "/styles.css", "/app.js", "/favicon.ico").permitAll()
+                        .requestMatchers("/", "/index.html", "/styles.css", "/app.js", "/favicon.ico", "/error").permitAll()
                         // Public Auth APIs & OAuth2 Redirects
                         .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         // Public Swagger & OpenAPI
@@ -64,9 +71,14 @@ public class SecurityConfig {
                         // All business APIs require authenticated JWT
                         .anyRequest().authenticated()
                 )
-                // Google OAuth2 Login integration
+                // Google OAuth2 Login integration with custom success & failure handlers
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2SuccessHandler)
+                        .failureHandler((request, response, exception) -> {
+                            log.error("OAuth2 Login Failed: {}", exception.getMessage());
+                            String errMsg = "Google OAuth login failed: " + exception.getMessage();
+                            response.sendRedirect("/index.html?error=" + URLEncoder.encode(errMsg, StandardCharsets.UTF_8));
+                        })
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
