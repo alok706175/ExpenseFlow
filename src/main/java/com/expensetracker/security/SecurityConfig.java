@@ -5,7 +5,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -30,12 +29,15 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
+    private final OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler;
     private final String allowedOrigins;
 
     public SecurityConfig(
             JwtAuthenticationFilter jwtAuthFilter,
+            OAuth2AuthenticationSuccessHandler oAuth2SuccessHandler,
             @Value("${app.cors.allowed-origins:*}") String allowedOrigins) {
         this.jwtAuthFilter = jwtAuthFilter;
+        this.oAuth2SuccessHandler = oAuth2SuccessHandler;
         this.allowedOrigins = allowedOrigins;
     }
 
@@ -49,8 +51,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         // Public Frontend static resources
                         .requestMatchers("/", "/index.html", "/styles.css", "/app.js", "/favicon.ico").permitAll()
-                        // Public Auth APIs
-                        .requestMatchers("/api/auth/**").permitAll()
+                        // Public Auth APIs & OAuth2 Redirects
+                        .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         // Public Swagger & OpenAPI
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
                         // Public Health & Actuator
@@ -61,6 +63,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         // All business APIs require authenticated JWT
                         .anyRequest().authenticated()
+                )
+                // Google OAuth2 Login integration
+                .oauth2Login(oauth2 -> oauth2
+                        .successHandler(oAuth2SuccessHandler)
                 )
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

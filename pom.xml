@@ -15,7 +15,7 @@
     <artifactId>expense-tracker</artifactId>
     <version>1.0.0</version>
     <name>expense-tracker</name>
-    <description>Enterprise-Grade Multi-Tenant Personal Expense Tracker with Spring Boot, Security, JWT, and Modern UI</description>
+    <description>Enterprise-Grade Multi-Tenant Personal Expense Tracker with Spring Boot, Security, OAuth2, JWT, and Modern UI</description>
 
     <properties>
         <java.version>17</java.version>
@@ -35,6 +35,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <!-- Spring OAuth2 Client (Google Login) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
         </dependency>
 
         <!-- Spring Boot Actuator (Health & Metrics) -->

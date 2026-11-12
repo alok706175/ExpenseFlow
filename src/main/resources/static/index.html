@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ExpenseTracker &bull; Personal Financial Management</title>
+    <title>ExpenseFlow &bull; Enterprise Multi-Tenant Financial Tracker</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,7 +25,7 @@
     </script>
     <!-- Chart.js CDN -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- FontAwesome CDN for modern icons -->
+    <!-- FontAwesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -42,28 +42,113 @@
                     </div>
                     <div>
                         <span class="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">ExpenseFlow</span>
-                        <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">v1.0 Pro</span>
+                        <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">v2.0 Enterprise</span>
                     </div>
                 </div>
 
                 <!-- Right Quick Links & Actions -->
                 <div class="flex items-center space-x-3">
+                    <!-- Swagger & Health Docs -->
                     <a href="/swagger-ui.html" target="_blank" class="hidden sm:inline-flex items-center text-xs font-medium text-slate-600 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors">
-                        <i class="fa-solid fa-code mr-1.5 text-slate-500"></i> Swagger API
+                        <i class="fa-solid fa-code mr-1.5 text-slate-500"></i> Swagger
                     </a>
-                    <button onclick="openBudgetModal()" class="inline-flex items-center text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
-                        <i class="fa-solid fa-sliders mr-1.5 text-emerald-600"></i> Budget Settings
+                    <a href="/actuator/health" target="_blank" class="hidden md:inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Health
+                    </a>
+
+                    <!-- Currency Switcher Dropdown (Authenticated) -->
+                    <div id="currencySelectorContainer" class="hidden items-center">
+                        <select id="userCurrencySelector" onchange="changeCurrency(this.value)" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="INR">₹ INR</option>
+                            <option value="USD">$ USD</option>
+                            <option value="EUR">€ EUR</option>
+                            <option value="GBP">£ GBP</option>
+                        </select>
+                    </div>
+
+                    <!-- Category Manager Button -->
+                    <button id="categoryManagerBtn" onclick="openCategoryModal()" class="hidden sm:inline-flex items-center text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
+                        <i class="fa-solid fa-tags mr-1.5 text-slate-500"></i> Categories
                     </button>
-                    <button onclick="openTransactionModal()" class="inline-flex items-center text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-lg shadow-sm shadow-emerald-600/30 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                        <i class="fa-solid fa-plus mr-1.5"></i> New Transaction
+
+                    <!-- Budget Settings Button -->
+                    <button id="budgetSettingsBtn" onclick="openBudgetModal()" class="hidden sm:inline-flex items-center text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
+                        <i class="fa-solid fa-sliders mr-1.5 text-emerald-600"></i> Budget
+                    </button>
+
+                    <!-- New Transaction Button -->
+                    <button id="newTxBtn" onclick="openTransactionModal()" class="hidden sm:inline-flex items-center text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-lg shadow-sm shadow-emerald-600/30 transition-all">
+                        <i class="fa-solid fa-plus mr-1.5"></i> Add
+                    </button>
+
+                    <!-- User Profile / Logout Container -->
+                    <div id="userProfileNav" class="hidden items-center space-x-2 pl-2 border-l border-slate-200">
+                        <span id="navUserName" class="text-xs font-bold text-slate-700 hidden lg:inline">User</span>
+                        <button onclick="logout()" title="Logout" class="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 p-2 rounded-lg transition-colors">
+                            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+                        </button>
+                    </div>
+
+                    <!-- Login Button (Visible when logged out) -->
+                    <button id="loginPromptBtn" onclick="showAuthModal(false)" class="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-lg shadow-sm">
+                        Sign In
                     </button>
                 </div>
             </div>
         </div>
     </header>
 
-    <!-- Main Content Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <!-- SECTION: AUTHENTICATION HERO (When Logged Out) -->
+    <div id="authHeroSection" class="hidden flex-1 flex items-center justify-center p-6">
+        <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-slate-200/80 text-center space-y-5 animate-fade-in">
+            <div class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <div>
+                <h2 class="text-2xl font-extrabold text-slate-900">Welcome to ExpenseFlow</h2>
+                <p class="text-xs text-slate-500 mt-2">Private & secure personal financial tracking. Each user's data is isolated so no one else can see your records.</p>
+            </div>
+
+            <!-- Google OAuth2 Login Button -->
+            <a href="/oauth2/authorization/google" class="w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-all hover:scale-[1.01]">
+                <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                </svg>
+                Continue with Google
+            </a>
+
+            <!-- Divider -->
+            <div class="relative flex py-1 items-center">
+                <div class="flex-grow border-t border-slate-200"></div>
+                <span class="flex-shrink mx-3 text-[11px] text-slate-400 font-semibold uppercase">Or with email</span>
+                <div class="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            <!-- Quick Demo Login Banner -->
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-left text-xs space-y-1">
+                <div class="flex items-center justify-between font-bold text-slate-700">
+                    <span><i class="fa-solid fa-key mr-1.5 text-emerald-600"></i> Pre-configured Demo Account</span>
+                    <button onclick="fillDemoCredentials()" class="text-[11px] text-emerald-600 underline font-semibold hover:text-emerald-700">Auto-fill</button>
+                </div>
+                <p class="text-slate-500 text-[11px]">Email: <span class="font-mono text-slate-700">demo@example.com</span> | Pass: <span class="font-mono text-slate-700">Password123</span></p>
+            </div>
+
+            <div class="space-y-2 pt-1">
+                <button onclick="showAuthModal(false)" class="w-full py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition-all">
+                    Sign In with Email
+                </button>
+                <button onclick="showAuthModal(true)" class="w-full py-2 px-4 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all">
+                    Don't have an account? <span class="text-emerald-600 underline">Register</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN DASHBOARD CONTENT (When Logged In) -->
+    <main id="dashboardMainSection" class="hidden flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
 
         <!-- Budget Alert Banner (Dynamic) -->
         <div id="budgetAlertBanner" class="hidden rounded-xl p-4 transition-all duration-300">
@@ -89,7 +174,7 @@
                         <i class="fa-solid fa-arrow-trend-up"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-slate-900 tracking-tight" id="kpiTotalIncome">$0.00</div>
+                <div class="text-2xl font-bold text-slate-900 tracking-tight" id="kpiTotalIncome">0</div>
                 <div class="mt-2 flex items-center text-xs text-emerald-600 font-medium">
                     <i class="fa-solid fa-circle-check mr-1"></i> Inflows & earnings
                 </div>
@@ -103,7 +188,7 @@
                         <i class="fa-solid fa-arrow-trend-down"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold text-slate-900 tracking-tight" id="kpiTotalExpense">$0.00</div>
+                <div class="text-2xl font-bold text-slate-900 tracking-tight" id="kpiTotalExpense">0</div>
                 <div class="mt-2 flex items-center text-xs text-rose-600 font-medium">
                     <i class="fa-solid fa-receipt mr-1"></i> Outflows & spending
                 </div>
@@ -117,7 +202,7 @@
                         <i class="fa-solid fa-scale-balanced"></i>
                     </div>
                 </div>
-                <div class="text-2xl font-bold tracking-tight" id="kpiBalance">$0.00</div>
+                <div class="text-2xl font-bold tracking-tight" id="kpiBalance">0</div>
                 <div class="mt-2 flex items-center text-xs text-slate-500 font-medium">
                     <span>Income minus expenses</span>
                 </div>
@@ -134,7 +219,7 @@
                 <div class="text-base font-bold text-slate-800 truncate" id="kpiTopCategory">N/A</div>
                 <div class="mt-2">
                     <div class="flex justify-between text-xs font-medium text-slate-600 mb-1">
-                        <span id="kpiBudgetLabel">Budget: $0</span>
+                        <span id="kpiBudgetLabel">Budget: 0</span>
                         <span id="kpiBudgetPercent">0%</span>
                     </div>
                     <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
@@ -151,7 +236,7 @@
                 <div class="flex items-center justify-between mb-4">
                     <div>
                         <h3 class="text-base font-bold text-slate-900">Income vs. Expense Trend</h3>
-                        <p class="text-xs text-slate-500">6-Month historical cashflow comparison</p>
+                        <p class="text-xs text-slate-500">Optimized single-query historical cashflow comparison</p>
                     </div>
                     <div class="flex items-center space-x-2 text-xs font-medium">
                         <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span>Income</span>
@@ -181,7 +266,6 @@
                 <h3 class="text-base font-bold text-slate-900 flex items-center">
                     <i class="fa-solid fa-list-check text-emerald-600 mr-2"></i> Transactions Ledger
                 </h3>
-                <!-- Right Quick Utilities -->
                 <div class="flex items-center space-x-2">
                     <button onclick="exportToCSV()" class="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300/80 px-3 py-2 rounded-lg transition-colors">
                         <i class="fa-solid fa-file-csv mr-1.5 text-emerald-600 text-sm"></i> Export CSV
@@ -221,14 +305,6 @@
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
                     <select id="filterCategory" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
                         <option value="">All Categories</option>
-                        <option value="Food">Food</option>
-                        <option value="Rent">Rent</option>
-                        <option value="Utilities">Utilities</option>
-                        <option value="Salary">Salary</option>
-                        <option value="Entertainment">Entertainment</option>
-                        <option value="Travel">Travel</option>
-                        <option value="Health">Health</option>
-                        <option value="Other">Other</option>
                     </select>
                 </div>
 
@@ -264,7 +340,6 @@
                         </tr>
                     </thead>
                     <tbody id="transactionsTableBody" class="divide-y divide-slate-100 font-medium text-slate-700">
-                        <!-- Populated by app.js -->
                         <tr>
                             <td colspan="7" class="py-8 text-center text-slate-400">Loading transactions...</td>
                         </tr>
@@ -272,19 +347,12 @@
                 </table>
             </div>
 
-            <!-- Pagination Bar -->
+            <!-- Enhanced Pagination Bar with Direct Page Navigation -->
             <div class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 gap-4">
                 <div class="text-xs text-slate-500" id="paginationInfo">
                     Showing 0 to 0 of 0 entries
                 </div>
-                <div class="flex items-center space-x-2">
-                    <button id="prevPageBtn" onclick="changePage(-1)" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
-                        <i class="fa-solid fa-chevron-left mr-1"></i> Previous
-                    </button>
-                    <span id="pageBadge" class="px-3 py-1 text-xs font-bold text-slate-800 bg-slate-200 rounded-lg">1</span>
-                    <button id="nextPageBtn" onclick="changePage(1)" class="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
-                        Next <i class="fa-solid fa-chevron-right ml-1"></i>
-                    </button>
+                <div class="flex items-center space-x-1" id="paginationButtonsContainer">
                 </div>
             </div>
         </div>
@@ -295,14 +363,89 @@
     <footer class="bg-white border-t border-slate-200 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-1">
             <p>ExpenseFlow &bull; Enterprise Personal Finance Management System</p>
-            <p>Spring Boot 3.x + Spring Data JPA + MySQL / H2 + Tailwind CSS &amp; Chart.js</p>
+            <p>Spring Boot 3.x + Google OAuth2 + JWT + MySQL / H2 + Tailwind CSS &amp; Chart.js</p>
         </div>
     </footer>
 
-    <!-- MODAL 1: Add / Edit Transaction Modal -->
+    <!-- MODAL: Auth (Login & Register) -->
+    <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
+            <div class="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
+                <div>
+                    <h3 id="authModalTitle" class="text-lg font-bold text-slate-900">Sign In</h3>
+                    <p id="authModalSubtitle" class="text-xs text-slate-500">Access your private financial dashboard</p>
+                </div>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-4">
+                <!-- Google Login Button in Modal -->
+                <a href="/oauth2/authorization/google" class="w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-all">
+                    <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24">
+                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    </svg>
+                    Continue with Google
+                </a>
+
+                <div class="relative flex items-center">
+                    <div class="flex-grow border-t border-slate-200"></div>
+                    <span class="flex-shrink mx-2 text-[10px] text-slate-400 font-bold uppercase">Or email</span>
+                    <div class="flex-grow border-t border-slate-200"></div>
+                </div>
+
+                <form id="authForm" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+                    <div id="authNameField" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                        <input type="text" id="authName" placeholder="Alok Kumar"
+                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                        <input type="email" id="authEmail" required placeholder="demo@example.com"
+                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
+                        <input type="password" id="authPassword" required minlength="6" placeholder="••••••••"
+                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    </div>
+
+                    <div id="authCurrencyField" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Currency</label>
+                        <select id="authCurrency" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                            <option value="INR">Indian Rupee (₹ INR)</option>
+                            <option value="USD">US Dollar ($ USD)</option>
+                            <option value="EUR">Euro (€ EUR)</option>
+                            <option value="GBP">British Pound (£ GBP)</option>
+                        </select>
+                    </div>
+
+                    <div id="authError" class="hidden text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200"></div>
+
+                    <button type="submit" id="authSubmitBtn" class="w-full py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
+                        Sign In
+                    </button>
+
+                    <div class="text-center pt-2">
+                        <button type="button" id="authToggleBtn" onclick="toggleAuthMode()" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold underline">
+                            Don't have an account? Sign up
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: Add / Edit Transaction -->
     <div id="txModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
-            <!-- Modal Header -->
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
                 <h3 id="modalTitle" class="text-base font-bold text-slate-900">Add Transaction</h3>
                 <button onclick="closeTransactionModal()" class="text-slate-400 hover:text-slate-600 p-1">
@@ -310,18 +453,15 @@
                 </button>
             </div>
 
-            <!-- Modal Form -->
             <form id="txForm" onsubmit="handleTransactionSubmit(event)" class="p-6 space-y-4">
                 <input type="hidden" id="txId">
 
-                <!-- Title -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Title <span class="text-rose-500">*</span></label>
-                    <input type="text" id="txTitle" required maxlength="100" placeholder="e.g. Monthly Grocery"
+                    <input type="text" id="txTitle" required maxlength="100" placeholder="e.g. Grocery Mart"
                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
 
-                <!-- Type & Amount in 2 columns -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Type <span class="text-rose-500">*</span></label>
@@ -331,25 +471,16 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Amount ($) <span class="text-rose-500">*</span></label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Amount (<span class="currencySymbol">₹</span>) <span class="text-rose-500">*</span></label>
                         <input type="number" id="txAmount" step="0.01" min="0.01" required placeholder="0.00"
                                class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
 
-                <!-- Category & Date in 2 columns -->
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Category <span class="text-rose-500">*</span></label>
                         <select id="txCategory" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
-                            <option value="Food">Food</option>
-                            <option value="Rent">Rent</option>
-                            <option value="Utilities">Utilities</option>
-                            <option value="Salary">Salary</option>
-                            <option value="Entertainment">Entertainment</option>
-                            <option value="Travel">Travel</option>
-                            <option value="Health">Health</option>
-                            <option value="Other">Other</option>
                         </select>
                     </div>
                     <div>
@@ -359,22 +490,19 @@
                     </div>
                 </div>
 
-                <!-- Notes -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Notes (Optional)</label>
-                    <textarea id="txNotes" rows="2" maxlength="255" placeholder="Optional details, receipt notes, vendor..."
+                    <textarea id="txNotes" rows="2" maxlength="255" placeholder="Optional notes or merchant info..."
                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
 
-                <!-- Error notice if any -->
                 <div id="modalError" class="hidden text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200"></div>
 
-                <!-- Modal Actions -->
                 <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors">
+                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg">
                         Cancel
                     </button>
-                    <button type="submit" id="modalSubmitBtn" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm shadow-emerald-600/30 transition-all">
+                    <button type="submit" id="modalSubmitBtn" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">
                         Save Transaction
                     </button>
                 </div>
@@ -382,7 +510,7 @@
         </div>
     </div>
 
-    <!-- MODAL 2: Budget Setting Modal -->
+    <!-- MODAL: Budget Setting -->
     <div id="budgetModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
@@ -398,10 +526,10 @@
                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Monthly Spending Limit ($)</label>
-                    <input type="number" id="budgetLimit" step="0.01" min="0" required placeholder="2500.00"
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Spending Limit (<span class="currencySymbol">₹</span>)</label>
+                    <input type="number" id="budgetLimit" step="0.01" min="0" required placeholder="30000.00"
                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    <p class="text-[11px] text-slate-500 mt-1">Receive automated warnings when spending crosses 80% and 100%.</p>
+                    <p class="text-[11px] text-slate-500 mt-1">Automatic alert triggers when spending crosses 80% and 100%.</p>
                 </div>
                 <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
                     <button type="button" onclick="closeBudgetModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg">
@@ -415,10 +543,39 @@
         </div>
     </div>
 
-    <!-- Toast Notification Container -->
+    <!-- MODAL: Custom Category Manager -->
+    <div id="categoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
+                <h3 class="text-base font-bold text-slate-900">Custom Categories</h3>
+                <button onclick="closeCategoryModal()" class="text-slate-400 hover:text-slate-600 p-1">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 space-y-4">
+                <!-- Add Category Form -->
+                <form id="createCategoryForm" onsubmit="handleCreateCategory(event)" class="flex gap-2">
+                    <input type="text" id="newCategoryName" required placeholder="New category name (e.g. Gym)"
+                           class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <select id="newCategoryType" class="text-xs px-2 py-2 border border-slate-300 rounded-lg bg-white">
+                        <option value="EXPENSE">Expense</option>
+                        <option value="INCOME">Income</option>
+                    </select>
+                    <button type="submit" class="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg">
+                        <i class="fa-solid fa-plus"></i>
+                    </button>
+                </form>
+
+                <!-- Categories List -->
+                <div class="border border-slate-200 rounded-xl max-h-56 overflow-y-auto divide-y divide-slate-100 text-xs" id="categoryModalList">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications -->
     <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
 
     <script src="app.js"></script>
 </body>
 </html>
-

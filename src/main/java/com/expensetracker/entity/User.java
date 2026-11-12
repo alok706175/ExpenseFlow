@@ -29,11 +29,15 @@ public class User {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    @NotBlank(message = "Password is required")
-    @Size(min = 6, message = "Password must be at least 6 characters")
     @JsonIgnore
-    @Column(nullable = false)
+    @Column(nullable = true) // Nullable for OAuth2 users who authenticate via Google
     private String password;
+
+    @Column(nullable = false, length = 20)
+    private String authProvider = "LOCAL"; // "LOCAL" or "GOOGLE"
+
+    @Column(length = 100)
+    private String providerId; // Google user ID (sub claim)
 
     @Column(nullable = false, length = 10)
     private String currency = "INR"; // Default currency (INR, USD, EUR, GBP)
@@ -52,6 +56,16 @@ public class User {
         this.name = name;
         this.email = email;
         this.password = password;
+        this.currency = (currency != null && !currency.trim().isEmpty()) ? currency : "INR";
+        this.role = "ROLE_USER";
+        this.authProvider = "LOCAL";
+    }
+
+    public User(String name, String email, String authProvider, String providerId, String currency) {
+        this.name = name;
+        this.email = email;
+        this.authProvider = authProvider;
+        this.providerId = providerId;
         this.currency = (currency != null && !currency.trim().isEmpty()) ? currency : "INR";
         this.role = "ROLE_USER";
     }
@@ -86,6 +100,22 @@ public class User {
 
     public void setPassword(String password) {
         this.password = password;
+    }
+
+    public String getAuthProvider() {
+        return authProvider;
+    }
+
+    public void setAuthProvider(String authProvider) {
+        this.authProvider = authProvider;
+    }
+
+    public String getProviderId() {
+        return providerId;
+    }
+
+    public void setProviderId(String providerId) {
+        this.providerId = providerId;
     }
 
     public String getCurrency() {
