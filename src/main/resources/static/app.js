@@ -153,9 +153,6 @@ function setLoggedInUI(isLoggedIn) {
     const userProfileNav = document.getElementById('userProfileNav');
     const currencyContainer = document.getElementById('currencySelectorContainer');
     const loginPromptBtn = document.getElementById('loginPromptBtn');
-    const categoryBtn = document.getElementById('categoryManagerBtn');
-    const budgetBtn = document.getElementById('budgetSettingsBtn');
-    const newTxBtn = document.getElementById('newTxBtn');
 
     if (isLoggedIn) {
         authHero.classList.add('hidden');
@@ -165,9 +162,6 @@ function setLoggedInUI(isLoggedIn) {
         currencyContainer.classList.remove('hidden');
         currencyContainer.classList.add('flex');
         loginPromptBtn.classList.add('hidden');
-        categoryBtn.classList.remove('hidden');
-        budgetBtn.classList.remove('hidden');
-        newTxBtn.classList.remove('hidden');
 
         document.getElementById('navUserName').textContent = currentUser ? currentUser.name : 'User';
         userCurrency = (currentUser && currentUser.currency) || 'INR';
@@ -179,9 +173,6 @@ function setLoggedInUI(isLoggedIn) {
         userProfileNav.classList.add('hidden');
         currencyContainer.classList.add('hidden');
         loginPromptBtn.classList.remove('hidden');
-        categoryBtn.classList.add('hidden');
-        budgetBtn.classList.add('hidden');
-        newTxBtn.classList.add('hidden');
     }
 }
 
