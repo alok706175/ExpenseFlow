@@ -266,21 +266,22 @@ public class TransactionServiceImpl implements TransactionService {
 
                 writer.writeNext(new String[]{"ID", "Title", "Amount", "Currency", "Type", "Category", "Transaction Date", "Notes", "Created At"});
 
-            for (Transaction t : transactions) {
-                writer.writeNext(new String[]{
-                        String.valueOf(t.getId()),
-                        t.getTitle(),
-                        t.getAmount().toPlainString(),
-                        user.getCurrency(),
-                        t.getType().name(),
-                        t.getCategory(),
-                        t.getTransactionDate().toString(),
-                        t.getNotes() != null ? t.getNotes() : "",
-                        t.getCreatedAt() != null ? t.getCreatedAt().toString() : ""
-                });
-            }
+                for (Transaction t : transactions) {
+                    writer.writeNext(new String[]{
+                            String.valueOf(t.getId()),
+                            t.getTitle(),
+                            t.getAmount().toPlainString(),
+                            user.getCurrency(),
+                            t.getType().name(),
+                            t.getCategory(),
+                            t.getTransactionDate().toString(),
+                            t.getNotes() != null ? t.getNotes() : "",
+                            t.getCreatedAt() != null ? t.getCreatedAt().toString() : ""
+                    });
+                }
 
-            writer.flush();
+                writer.flush();
+            }
             return baos.toByteArray();
         } catch (Exception e) {
             log.error("Failed to generate CSV export", e);
