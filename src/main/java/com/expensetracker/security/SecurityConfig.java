@@ -56,7 +56,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth
                         // Public Frontend static resources & error route
-                        .requestMatchers("/", "/index.html", "/styles.css", "/app.js", "/favicon.ico", "/error").permitAll()
+                        .requestMatchers("/", "/index.html", "/styles.css", "/app.js", "/favicon.ico", "/favicon.png", "/logo.png", "/error").permitAll()
                         // Public Auth APIs & OAuth2 Redirects
                         .requestMatchers("/api/auth/**", "/oauth2/**", "/login/oauth2/**").permitAll()
                         // Public Swagger & OpenAPI

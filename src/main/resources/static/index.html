@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ExpenseFlow</title>
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="shortcut icon" href="/favicon.ico">
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -39,10 +42,7 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Brand Logo & Name -->
                 <div class="flex items-center space-x-3">
-                    <div
-                        class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
-                        <i class="fa-solid fa-wallet text-lg"></i>
-                    </div>
+                    <img src="/logo.png" alt="ExpenseFlow Logo" class="w-10 h-10 object-contain drop-shadow-sm">
                     <div>
                         <span
                             class="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">ExpenseFlow</span>
@@ -85,10 +85,7 @@
     <div id="authHeroSection" class="hidden flex-1 flex items-center justify-center p-6">
         <div
             class="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-slate-200/80 text-center space-y-5 animate-fade-in">
-            <div
-                class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
-                <i class="fa-solid fa-shield-halved"></i>
-            </div>
+            <img src="/logo.png" alt="ExpenseFlow Logo" class="w-20 h-20 object-contain mx-auto drop-shadow-md">
             <div>
                 <h2 class="text-2xl font-extrabold text-slate-900">Welcome to ExpenseFlow</h2>
                 <p class="text-xs text-slate-500 mt-2">Private & secure personal financial tracking. Each user's data is
@@ -374,7 +371,7 @@
     <footer class="bg-white border-t border-slate-200 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-1">
             <p>Copyright &copy; 2026 ExpenseFlow</p>
-            <p>Made with Love by Alok</p>
+            <p>Built with Java, Spring Boot, Spring Security, Google OAuth2, JWT, Spring Data JPA, Tailwind CSS</p>
         </div>
     </footer>
 
