@@ -885,12 +885,6 @@ function toggleAuthMode() {
     showAuthModal(!isRegisterMode);
 }
 
-function fillDemoCredentials() {
-    showAuthModal(false);
-    document.getElementById('authEmail').value = 'demo@example.com';
-    document.getElementById('authPassword').value = 'Password123';
-}
-
 async function handleAuthSubmit(event) {
     event.preventDefault();
     const email = document.getElementById('authEmail').value.trim();
