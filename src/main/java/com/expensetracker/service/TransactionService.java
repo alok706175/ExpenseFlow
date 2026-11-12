@@ -49,4 +49,6 @@ public interface TransactionService {
             TransactionType type,
             String search
     );
+
+    int deleteTransactionsByDateRange(User user, LocalDate startDate, LocalDate endDate);
 }

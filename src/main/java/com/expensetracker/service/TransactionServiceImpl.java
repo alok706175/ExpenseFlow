@@ -597,6 +597,15 @@ public class TransactionServiceImpl implements TransactionService {
         }
     }
 
+    @Override
+    @Transactional
+    public int deleteTransactionsByDateRange(User user, LocalDate startDate, LocalDate endDate) {
+        log.info("Deleting transactions for user [ID: {}] between {} and {}", user.getId(), startDate, endDate);
+        int deletedCount = transactionRepository.deleteByUserAndDateRange(user, startDate, endDate);
+        log.info("Successfully deleted {} transactions for user [ID: {}]", deletedCount, user.getId());
+        return deletedCount;
+    }
+
     private TransactionResponseDTO mapToDTO(Transaction entity) {
         return new TransactionResponseDTO(
                 entity.getId(),

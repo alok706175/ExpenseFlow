@@ -1000,6 +1000,189 @@ async function exportToPDF() {
 }
 
 /**
+ * Clear / Bulk Delete Transaction History
+ */
+function formatIsoDate(d) {
+    if (!d || isNaN(d.getTime())) return '';
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
+function getPresetDateRange(preset) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    switch (preset) {
+        case 'today': {
+            const str = formatIsoDate(today);
+            return { start: str, end: str, label: `${str} (Today)` };
+        }
+        case 'yesterday': {
+            const y = new Date(today);
+            y.setDate(today.getDate() - 1);
+            const str = formatIsoDate(y);
+            return { start: str, end: str, label: `${str} (Yesterday)` };
+        }
+        case 'this_week': {
+            const day = today.getDay();
+            const diffToMon = (day === 0 ? -6 : 1) - day;
+            const mon = new Date(today);
+            mon.setDate(today.getDate() + diffToMon);
+            const sun = new Date(mon);
+            sun.setDate(mon.getDate() + 6);
+            return { start: formatIsoDate(mon), end: formatIsoDate(sun), label: `${formatIsoDate(mon)} to ${formatIsoDate(sun)}` };
+        }
+        case 'last_week': {
+            const day = today.getDay();
+            const diffToMon = (day === 0 ? -6 : 1) - day;
+            const lastMon = new Date(today);
+            lastMon.setDate(today.getDate() + diffToMon - 7);
+            const lastSun = new Date(lastMon);
+            lastSun.setDate(lastMon.getDate() + 6);
+            return { start: formatIsoDate(lastMon), end: formatIsoDate(lastSun), label: `${formatIsoDate(lastMon)} to ${formatIsoDate(lastSun)}` };
+        }
+        case 'this_month': {
+            const first = new Date(today.getFullYear(), today.getMonth(), 1);
+            const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            return { start: formatIsoDate(first), end: formatIsoDate(last), label: `${formatIsoDate(first)} to ${formatIsoDate(last)}` };
+        }
+        case 'last_month': {
+            const first = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+            const last = new Date(today.getFullYear(), today.getMonth(), 0);
+            return { start: formatIsoDate(first), end: formatIsoDate(last), label: `${formatIsoDate(first)} to ${formatIsoDate(last)}` };
+        }
+        case 'last_6_months': {
+            const first = new Date(today.getFullYear(), today.getMonth() - 5, 1);
+            const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            return { start: formatIsoDate(first), end: formatIsoDate(last), label: `${formatIsoDate(first)} to ${formatIsoDate(last)}` };
+        }
+        case 'this_year': {
+            const first = new Date(today.getFullYear(), 0, 1);
+            const last = new Date(today.getFullYear(), 11, 31);
+            return { start: formatIsoDate(first), end: formatIsoDate(last), label: `${formatIsoDate(first)} to ${formatIsoDate(last)}` };
+        }
+        case 'all': {
+            return { start: null, end: null, label: 'Entire History (All Time)' };
+        }
+        case 'custom': {
+            const s = document.getElementById('historyStartDate').value;
+            const e = document.getElementById('historyEndDate').value;
+            const lbl = (s && e) ? `${s} to ${e}` : (s ? `From ${s}` : (e ? `Up to ${e}` : 'Select dates'));
+            return { start: s || null, end: e || null, label: lbl };
+        }
+        default:
+            return { start: null, end: null, label: 'All Time' };
+    }
+}
+
+function handleHistoryPresetChange(preset) {
+    const customFields = document.getElementById('historyCustomFields');
+    const rangeText = document.getElementById('historyRangeText');
+
+    if (preset === 'custom') {
+        customFields.classList.remove('hidden');
+        if (!document.getElementById('historyStartDate').value) {
+            const todayStr = formatIsoDate(new Date());
+            document.getElementById('historyStartDate').value = todayStr;
+            document.getElementById('historyEndDate').value = todayStr;
+        }
+    } else {
+        customFields.classList.add('hidden');
+    }
+
+    const range = getPresetDateRange(preset);
+    rangeText.textContent = range.label;
+    toggleHistoryDeleteBtn();
+}
+
+function updateCustomRangePreview() {
+    const range = getPresetDateRange('custom');
+    document.getElementById('historyRangeText').textContent = range.label;
+    toggleHistoryDeleteBtn();
+}
+
+function toggleHistoryDeleteBtn() {
+    const check = document.getElementById('historyConfirmCheck');
+    const btn = document.getElementById('historyDeleteBtn');
+    const preset = document.getElementById('historyRangePreset').value;
+
+    let valid = Boolean(check && check.checked);
+    if (preset === 'custom') {
+        const s = document.getElementById('historyStartDate').value;
+        const e = document.getElementById('historyEndDate').value;
+        if (!s || !e) valid = false;
+    }
+
+    if (btn) btn.disabled = !valid;
+}
+
+function openClearHistoryModal() {
+    const modal = document.getElementById('clearHistoryModal');
+    if (!modal) return;
+
+    document.getElementById('historyRangePreset').value = 'this_month';
+    document.getElementById('historyConfirmCheck').checked = false;
+    document.getElementById('historyModalError').classList.add('hidden');
+    document.getElementById('historyDeleteBtn').disabled = true;
+
+    const todayStr = formatIsoDate(new Date());
+    document.getElementById('historyStartDate').value = todayStr;
+    document.getElementById('historyEndDate').value = todayStr;
+
+    handleHistoryPresetChange('this_month');
+    modal.classList.remove('hidden');
+}
+
+function closeClearHistoryModal() {
+    const modal = document.getElementById('clearHistoryModal');
+    if (modal) modal.classList.add('hidden');
+}
+
+async function confirmDeleteHistory() {
+    const preset = document.getElementById('historyRangePreset').value;
+    const range = getPresetDateRange(preset);
+    const btn = document.getElementById('historyDeleteBtn');
+    const errEl = document.getElementById('historyModalError');
+    errEl.classList.add('hidden');
+
+    if (preset === 'custom' && range.start && range.end && range.start > range.end) {
+        errEl.textContent = 'Start date cannot be after end date.';
+        errEl.classList.remove('hidden');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Deleting...';
+
+    const params = new URLSearchParams();
+    if (range.start) params.append('startDate', range.start);
+    if (range.end) params.append('endDate', range.end);
+    const url = `${API_BASE}/history${params.toString() ? '?' + params.toString() : ''}`;
+
+    try {
+        const response = await authFetch(url, { method: 'DELETE' });
+        if (!response.ok) {
+            const err = await response.json();
+            throw new Error(err.message || 'Failed to delete transaction history');
+        }
+
+        const data = await response.json();
+        closeClearHistoryModal();
+        showToast('History Cleared', data.message || `${data.deletedCount} transaction(s) deleted.`, 'info');
+        loadDashboard();
+    } catch (err) {
+        errEl.textContent = err.message;
+        errEl.classList.remove('hidden');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-regular fa-trash-can mr-1.5"></i> Delete History';
+        toggleHistoryDeleteBtn();
+    }
+}
+
+/**
  * Authentication Handling
  */
 function showAuthModal(register = false) {

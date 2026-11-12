@@ -24,6 +24,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/transactions")
@@ -162,5 +163,23 @@ public class TransactionController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfBytes);
+    }
+
+    @DeleteMapping("/history")
+    @Operation(summary = "Bulk delete transaction history by date range",
+               description = "Permanently deletes user transactions matching the specified start and end date range")
+    public ResponseEntity<Map<String, Object>> deleteHistory(
+            @Parameter(description = "Start date (YYYY-MM-DD)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "End date (YYYY-MM-DD)")
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+
+        User user = authService.getCurrentAuthenticatedUser();
+        int deletedCount = transactionService.deleteTransactionsByDateRange(user, startDate, endDate);
+
+        return ResponseEntity.ok(Map.of(
+                "deletedCount", deletedCount,
+                "message", deletedCount + " transaction(s) deleted successfully."
+        ));
     }
 }

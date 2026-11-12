@@ -6,6 +6,7 @@ import com.expensetracker.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -79,5 +80,15 @@ public interface TransactionRepository extends JpaRepository<Transaction, Long> 
     List<Object[]> findTrendsDataSince(
             @Param("user") User user,
             @Param("startDate") LocalDate startDate
+    );
+
+    @Modifying
+    @Query("DELETE FROM Transaction t WHERE t.user = :user AND " +
+           "(:startDate IS NULL OR t.transactionDate >= :startDate) AND " +
+           "(:endDate IS NULL OR t.transactionDate <= :endDate)")
+    int deleteByUserAndDateRange(
+            @Param("user") User user,
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
     );
 }
