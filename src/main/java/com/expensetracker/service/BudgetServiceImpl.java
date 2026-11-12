@@ -33,10 +33,19 @@ public class BudgetServiceImpl implements BudgetService {
 
     @Override
     public BudgetDTO setBudgetForMonth(User user, BudgetDTO budgetDTO) {
-        Budget budget = budgetRepository.findByUserAndMonthYear(user, budgetDTO.getMonthYear())
-                .orElse(new Budget(user, budgetDTO.getMonthYear(), budgetDTO.getMonthlyLimit()));
+        String targetMonth = budgetDTO.getMonthYear().trim();
+        BigDecimal limit = budgetDTO.getMonthlyLimit();
 
-        budget.setMonthlyLimit(budgetDTO.getMonthlyLimit());
+        Budget budget = budgetRepository.findFirstByUserAndMonthYearOrderByIdDesc(user, targetMonth)
+                .orElse(null);
+
+        if (budget == null) {
+            budget = new Budget(user, targetMonth, limit);
+        } else {
+            budget.setUser(user);
+            budget.setMonthlyLimit(limit);
+        }
+
         Budget saved = budgetRepository.save(budget);
         log.info("Set monthly budget to {} for user [ID: {}] on month {}", saved.getMonthlyLimit(), user.getId(), saved.getMonthYear());
         return mapToDTO(saved);

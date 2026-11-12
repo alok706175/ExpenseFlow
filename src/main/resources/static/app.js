@@ -982,10 +982,30 @@ function closeBudgetModal() {
 
 async function handleBudgetSubmit(event) {
     event.preventDefault();
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn ? submitBtn.innerHTML : 'Save Budget';
+
+    let monthVal = document.getElementById('budgetMonth').value.trim();
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(monthVal)) {
+        const d = new Date();
+        monthVal = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    }
+
+    const limitVal = parseFloat(document.getElementById('budgetLimit').value);
+    if (isNaN(limitVal) || limitVal < 0) {
+        showToast('Invalid Amount', 'Please enter a valid positive budget limit.', 'error');
+        return;
+    }
+
     const payload = {
-        monthYear: document.getElementById('budgetMonth').value,
-        monthlyLimit: parseFloat(document.getElementById('budgetLimit').value)
+        monthYear: monthVal,
+        monthlyLimit: limitVal
     };
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin mr-1.5"></i> Saving...';
+    }
 
     try {
         const response = await authFetch(BUDGET_API, {
@@ -994,13 +1014,22 @@ async function handleBudgetSubmit(event) {
             body: JSON.stringify(payload)
         });
 
-        if (!response.ok) throw new Error('Failed to save monthly budget');
+        if (!response.ok) {
+            const errData = await response.json().catch(() => ({}));
+            const msg = errData.message || (errData.errors ? Object.values(errData.errors).join(', ') : 'Failed to save monthly budget');
+            throw new Error(msg);
+        }
 
         closeBudgetModal();
         await loadDashboard();
         showToast('Budget Saved', `Monthly budget updated to ${formatCurrency(payload.monthlyLimit)}.`, 'success');
     } catch (err) {
         showToast('Error', err.message, 'error');
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalText;
+        }
     }
 }
 

@@ -9,6 +9,7 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
 
@@ -44,6 +45,23 @@ public class ExpenseTrackerApplication {
                 );
                 categoryRepo.saveAll(defaultCategories);
                 log.info("Default categories seeded successfully.");
+            }
+        };
+    }
+
+    /**
+     * Safely drops legacy single-tenant unique constraint on month_year
+     * to prevent 'Duplicate entry for key uk_budget_month_year' when multiple users set budgets.
+     */
+    @Bean
+    public CommandLineRunner dropLegacyBudgetConstraint(JdbcTemplate jdbcTemplate) {
+        return args -> {
+            try {
+                jdbcTemplate.execute("ALTER TABLE budgets DROP INDEX uk_budget_month_year");
+                log.info("Successfully dropped legacy single-tenant index uk_budget_month_year");
+            } catch (Exception e) {
+                // Index does not exist or already dropped, completely normal
+                log.debug("No legacy index uk_budget_month_year to drop: {}", e.getMessage());
             }
         };
     }

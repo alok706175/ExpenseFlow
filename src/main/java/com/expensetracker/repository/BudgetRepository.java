@@ -10,5 +10,9 @@ import java.util.Optional;
 @Repository
 public interface BudgetRepository extends JpaRepository<Budget, Long> {
 
-    Optional<Budget> findByUserAndMonthYear(User user, String monthYear);
+    Optional<Budget> findFirstByUserAndMonthYearOrderByIdDesc(User user, String monthYear);
+
+    default Optional<Budget> findByUserAndMonthYear(User user, String monthYear) {
+        return findFirstByUserAndMonthYearOrderByIdDesc(user, monthYear);
+    }
 }

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "budgets", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_budget_user_month_year", columnNames = {"user_id", "monthYear"})
+    @UniqueConstraint(name = "uk_budget_user_month_year", columnNames = {"user_id", "month_year"})
 })
 public class Budget {
 
@@ -29,12 +29,12 @@ public class Budget {
 
     @NotBlank(message = "Month and year string is required (e.g., '2026-11')")
     @Pattern(regexp = "^\\d{4}-(0[1-9]|1[0-2])$", message = "monthYear format must be YYYY-MM")
-    @Column(nullable = false, length = 7)
+    @Column(name = "month_year", nullable = false, length = 7)
     private String monthYear;
 
     @NotNull(message = "Monthly limit is required")
     @DecimalMin(value = "0.00", message = "Monthly limit must be positive or zero")
-    @Column(nullable = false, precision = 12, scale = 2)
+    @Column(name = "monthly_limit", nullable = false, precision = 12, scale = 2)
     private BigDecimal monthlyLimit;
 
     @CreationTimestamp
