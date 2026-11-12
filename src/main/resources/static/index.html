@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" class="h-full bg-slate-50">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -29,6 +30,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
+
 <body class="h-full flex flex-col font-sans text-slate-800 antialiased bg-slate-50">
 
     <!-- Top Navigation Bar -->
@@ -37,28 +39,35 @@
             <div class="flex justify-between items-center h-16">
                 <!-- Brand Logo & Name -->
                 <div class="flex items-center space-x-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-md shadow-emerald-500/20">
                         <i class="fa-solid fa-wallet text-lg"></i>
                     </div>
                     <div>
-                        <span class="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">ExpenseFlow</span>
-                        <span class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">v2.0 Enterprise</span>
+                        <span
+                            class="text-xl font-bold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">ExpenseFlow</span>
+                        <span
+                            class="ml-2 px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">v2.0
+                            Enterprise</span>
                     </div>
                 </div>
 
                 <!-- Right Quick Links & Actions -->
                 <div class="flex items-center space-x-3">
                     <!-- Swagger & Health Docs -->
-                    <a href="/swagger-ui.html" target="_blank" class="hidden sm:inline-flex items-center text-xs font-medium text-slate-600 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors">
+                    <a href="/swagger-ui.html" target="_blank"
+                        class="hidden sm:inline-flex items-center text-xs font-medium text-slate-600 hover:text-emerald-600 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors">
                         <i class="fa-solid fa-code mr-1.5 text-slate-500"></i> Swagger
                     </a>
-                    <a href="/actuator/health" target="_blank" class="hidden md:inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
+                    <a href="/actuator/health" target="_blank"
+                        class="hidden md:inline-flex items-center text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1.5 rounded-lg border border-emerald-200">
                         <span class="w-2 h-2 rounded-full bg-emerald-500 mr-1.5 animate-pulse"></span> Health
                     </a>
 
                     <!-- Currency Switcher Dropdown (Authenticated) -->
                     <div id="currencySelectorContainer" class="hidden items-center">
-                        <select id="userCurrencySelector" onchange="changeCurrency(this.value)" class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <select id="userCurrencySelector" onchange="changeCurrency(this.value)"
+                            class="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-300 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-emerald-500">
                             <option value="INR">₹ INR</option>
                             <option value="USD">$ USD</option>
                             <option value="EUR">€ EUR</option>
@@ -67,30 +76,35 @@
                     </div>
 
                     <!-- Category Manager Button -->
-                    <button id="categoryManagerBtn" onclick="openCategoryModal()" class="hidden sm:inline-flex items-center text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
+                    <button id="categoryManagerBtn" onclick="openCategoryModal()"
+                        class="hidden sm:inline-flex items-center text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
                         <i class="fa-solid fa-tags mr-1.5 text-slate-500"></i> Categories
                     </button>
 
                     <!-- Budget Settings Button -->
-                    <button id="budgetSettingsBtn" onclick="openBudgetModal()" class="hidden sm:inline-flex items-center text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
+                    <button id="budgetSettingsBtn" onclick="openBudgetModal()"
+                        class="hidden sm:inline-flex items-center text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg transition-colors border border-slate-200">
                         <i class="fa-solid fa-sliders mr-1.5 text-emerald-600"></i> Budget
                     </button>
 
                     <!-- New Transaction Button -->
-                    <button id="newTxBtn" onclick="openTransactionModal()" class="hidden sm:inline-flex items-center text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-lg shadow-sm shadow-emerald-600/30 transition-all">
+                    <button id="newTxBtn" onclick="openTransactionModal()"
+                        class="hidden sm:inline-flex items-center text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-lg shadow-sm shadow-emerald-600/30 transition-all">
                         <i class="fa-solid fa-plus mr-1.5"></i> Add
                     </button>
 
                     <!-- User Profile / Logout Container -->
                     <div id="userProfileNav" class="hidden items-center space-x-2 pl-2 border-l border-slate-200">
                         <span id="navUserName" class="text-xs font-bold text-slate-700 hidden lg:inline">User</span>
-                        <button onclick="logout()" title="Logout" class="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 p-2 rounded-lg transition-colors">
+                        <button onclick="logout()" title="Logout"
+                            class="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 p-2 rounded-lg transition-colors">
                             <i class="fa-solid fa-arrow-right-from-bracket"></i>
                         </button>
                     </div>
 
                     <!-- Login Button (Visible when logged out) -->
-                    <button id="loginPromptBtn" onclick="showAuthModal(false)" class="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-lg shadow-sm">
+                    <button id="loginPromptBtn" onclick="showAuthModal(false)"
+                        class="text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 px-3.5 py-1.5 rounded-lg shadow-sm">
                         Sign In
                     </button>
                 </div>
@@ -100,22 +114,30 @@
 
     <!-- SECTION: AUTHENTICATION HERO (When Logged Out) -->
     <div id="authHeroSection" class="hidden flex-1 flex items-center justify-center p-6">
-        <div class="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-slate-200/80 text-center space-y-5 animate-fade-in">
-            <div class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
+        <div
+            class="max-w-md w-full bg-white rounded-3xl p-8 shadow-xl border border-slate-200/80 text-center space-y-5 animate-fade-in">
+            <div
+                class="w-16 h-16 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center mx-auto text-2xl shadow-inner">
                 <i class="fa-solid fa-shield-halved"></i>
             </div>
             <div>
                 <h2 class="text-2xl font-extrabold text-slate-900">Welcome to ExpenseFlow</h2>
-                <p class="text-xs text-slate-500 mt-2">Private & secure personal financial tracking. Each user's data is isolated so no one else can see your records.</p>
+                <p class="text-xs text-slate-500 mt-2">Private & secure personal financial tracking. Each user's data is
+                    isolated so no one else can see your records.</p>
             </div>
 
             <!-- Google OAuth2 Login Button -->
-            <a href="/oauth2/authorization/google" class="w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-all hover:scale-[1.01]">
+            <a href="/oauth2/authorization/google"
+                class="w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-sm font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-all hover:scale-[1.01]">
                 <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                    <path fill="#4285F4"
+                        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853"
+                        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05"
+                        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                    <path fill="#EA4335"
+                        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                 </svg>
                 Continue with Google
             </a>
@@ -128,10 +150,12 @@
             </div>
 
             <div class="space-y-2 pt-1">
-                <button onclick="showAuthModal(false)" class="w-full py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition-all">
+                <button onclick="showAuthModal(false)"
+                    class="w-full py-2.5 px-4 rounded-xl text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 shadow-md shadow-emerald-600/30 transition-all">
                     Sign In with Email
                 </button>
-                <button onclick="showAuthModal(true)" class="w-full py-2 px-4 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all">
+                <button onclick="showAuthModal(true)"
+                    class="w-full py-2 px-4 rounded-xl text-xs font-semibold text-slate-700 hover:text-slate-900 transition-all">
                     Don't have an account? <span class="text-emerald-600 underline">Register</span>
                 </button>
             </div>
@@ -151,14 +175,16 @@
                         <p id="budgetAlertText" class="text-xs"></p>
                     </div>
                 </div>
-                <button onclick="openBudgetModal()" class="text-xs font-semibold underline hover:opacity-80 px-2 py-1">Adjust Limit</button>
+                <button onclick="openBudgetModal()"
+                    class="text-xs font-semibold underline hover:opacity-80 px-2 py-1">Adjust Limit</button>
             </div>
         </div>
 
         <!-- Section 1: KPI Summary Cards -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
             <!-- Total Income Card -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div
+                class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Income</span>
                     <div class="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
@@ -172,7 +198,8 @@
             </div>
 
             <!-- Total Expenses Card -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div
+                class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Total Expenses</span>
                     <div class="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -186,7 +213,8 @@
             </div>
 
             <!-- Net Balance Card -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div
+                class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between mb-3">
                     <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Net Balance</span>
                     <div class="w-9 h-9 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center">
@@ -200,9 +228,11 @@
             </div>
 
             <!-- Budget Health / Top Category Card -->
-            <div class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
+            <div
+                class="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-xs hover:shadow-md transition-shadow">
                 <div class="flex items-center justify-between mb-3">
-                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Top Spend & Budget</span>
+                    <span class="text-xs font-semibold uppercase tracking-wider text-slate-500">Top Spend &
+                        Budget</span>
                     <div class="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
                         <i class="fa-solid fa-bullseye"></i>
                     </div>
@@ -214,7 +244,8 @@
                         <span id="kpiBudgetPercent">0%</span>
                     </div>
                     <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                        <div id="kpiBudgetBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                        <div id="kpiBudgetBar" class="bg-emerald-500 h-2 rounded-full transition-all duration-500"
+                            style="width: 0%"></div>
                     </div>
                 </div>
             </div>
@@ -230,8 +261,10 @@
                         <p class="text-xs text-slate-500">Optimized single-query historical cashflow comparison</p>
                     </div>
                     <div class="flex items-center space-x-2 text-xs font-medium">
-                        <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span>Income</span>
-                        <span class="inline-flex items-center"><span class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-1.5"></span>Expense</span>
+                        <span class="inline-flex items-center"><span
+                                class="w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1.5"></span>Income</span>
+                        <span class="inline-flex items-center"><span
+                                class="w-2.5 h-2.5 rounded-full bg-rose-500 mr-1.5"></span>Expense</span>
                     </div>
                 </div>
                 <div class="relative h-64 sm:h-72 w-full">
@@ -258,10 +291,12 @@
                     <i class="fa-solid fa-list-check text-emerald-600 mr-2"></i> Transactions Ledger
                 </h3>
                 <div class="flex items-center space-x-2">
-                    <button onclick="exportToCSV()" class="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300/80 px-3 py-2 rounded-lg transition-colors">
+                    <button onclick="exportToCSV()"
+                        class="inline-flex items-center text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300/80 px-3 py-2 rounded-lg transition-colors">
                         <i class="fa-solid fa-file-csv mr-1.5 text-emerald-600 text-sm"></i> Export CSV
                     </button>
-                    <button onclick="resetFilters()" class="inline-flex items-center text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg transition-colors">
+                    <button onclick="resetFilters()"
+                        class="inline-flex items-center text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-50 hover:bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg transition-colors">
                         <i class="fa-solid fa-arrows-rotate mr-1.5"></i> Reset
                     </button>
                 </div>
@@ -273,18 +308,20 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Search Keyword</label>
                     <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                        <span
+                            class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                             <i class="fa-solid fa-magnifying-glass text-xs"></i>
                         </span>
                         <input type="text" id="filterSearch" placeholder="Title or notes..."
-                               class="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all">
+                            class="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition-all">
                     </div>
                 </div>
 
                 <!-- Type Selector -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Type</label>
-                    <select id="filterType" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                    <select id="filterType"
+                        class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
                         <option value="">All Types</option>
                         <option value="EXPENSE">Expense Only</option>
                         <option value="INCOME">Income Only</option>
@@ -294,7 +331,8 @@
                 <!-- Category Selector -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">Category</label>
-                    <select id="filterCategory" class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                    <select id="filterCategory"
+                        class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
                         <option value="">All Categories</option>
                     </select>
                 </div>
@@ -303,14 +341,14 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">From Date</label>
                     <input type="date" id="filterStartDate"
-                           class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
 
                 <!-- End Date -->
                 <div>
                     <label class="block text-xs font-semibold text-slate-600 mb-1">To Date</label>
                     <input type="date" id="filterEndDate"
-                           class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        class="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
             </div>
         </div>
@@ -339,7 +377,8 @@
             </div>
 
             <!-- Enhanced Pagination Bar with Direct Page Navigation -->
-            <div class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 gap-4">
+            <div
+                class="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-slate-100 bg-slate-50/50 gap-4">
                 <div class="text-xs text-slate-500" id="paginationInfo">
                     Showing 0 to 0 of 0 entries
                 </div>
@@ -353,14 +392,16 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-slate-200 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center text-xs text-slate-500 space-y-1">
-            <p>ExpenseFlow &bull; Enterprise Personal Finance Management System</p>
-            <p>Spring Boot 3.x + Google OAuth2 + JWT + MySQL / H2 + Tailwind CSS &amp; Chart.js</p>
+            <p>&copy;2026 ExpenseFlow &bull;A Personal Finance Management System</p>
+            <p>Made with Love by Alok</p>
         </div>
     </footer>
 
     <!-- MODAL: Auth (Login & Register) -->
-    <div id="authModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-        <div class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
+    <div id="authModal"
+        class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+        <div
+            class="bg-white rounded-3xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden transform transition-all">
             <div class="p-6 border-b border-slate-100 bg-slate-50 flex items-center justify-between">
                 <div>
                     <h3 id="authModalTitle" class="text-lg font-bold text-slate-900">Sign In</h3>
@@ -373,12 +414,17 @@
 
             <div class="p-6 space-y-4">
                 <!-- Google Login Button in Modal -->
-                <a href="/oauth2/authorization/google" class="w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-all">
+                <a href="/oauth2/authorization/google"
+                    class="w-full flex items-center justify-center py-2.5 px-4 rounded-xl text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-300 shadow-xs transition-all">
                     <svg class="w-4 h-4 mr-2" viewBox="0 0 24 24">
-                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                        <path fill="#4285F4"
+                            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                        <path fill="#34A853"
+                            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                        <path fill="#FBBC05"
+                            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                        <path fill="#EA4335"
+                            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
                     </svg>
                     Continue with Google
                 </a>
@@ -393,24 +439,25 @@
                     <div id="authNameField" class="hidden">
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
                         <input type="text" id="authName" placeholder="Alok Kumar"
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
                         <input type="email" id="authEmail" required placeholder="you@example.com"
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
 
                     <div>
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Password</label>
                         <input type="password" id="authPassword" required minlength="6" placeholder="••••••••"
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
 
                     <div id="authCurrencyField" class="hidden">
                         <label class="block text-xs font-semibold text-slate-700 mb-1">Preferred Currency</label>
-                        <select id="authCurrency" class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                        <select id="authCurrency"
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
                             <option value="INR">Indian Rupee (₹ INR)</option>
                             <option value="USD">US Dollar ($ USD)</option>
                             <option value="EUR">Euro (€ EUR)</option>
@@ -418,14 +465,17 @@
                         </select>
                     </div>
 
-                    <div id="authError" class="hidden text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200"></div>
+                    <div id="authError"
+                        class="hidden text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200"></div>
 
-                    <button type="submit" id="authSubmitBtn" class="w-full py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
+                    <button type="submit" id="authSubmitBtn"
+                        class="w-full py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-md transition-all">
                         Sign In
                     </button>
 
                     <div class="text-center pt-2">
-                        <button type="button" id="authToggleBtn" onclick="toggleAuthMode()" class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold underline">
+                        <button type="button" id="authToggleBtn" onclick="toggleAuthMode()"
+                            class="text-xs text-emerald-600 hover:text-emerald-700 font-semibold underline">
                             Don't have an account? Sign up
                         </button>
                     </div>
@@ -435,7 +485,8 @@
     </div>
 
     <!-- MODAL: Add / Edit Transaction -->
-    <div id="txModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div id="txModal"
+        class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
                 <h3 id="modalTitle" class="text-base font-bold text-slate-900">Add Transaction</h3>
@@ -448,52 +499,62 @@
                 <input type="hidden" id="txId">
 
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Title <span class="text-rose-500">*</span></label>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Title <span
+                            class="text-rose-500">*</span></label>
                     <input type="text" id="txTitle" required maxlength="100" placeholder="e.g. Grocery Mart"
-                           class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Type <span class="text-rose-500">*</span></label>
-                        <select id="txType" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Type <span
+                                class="text-rose-500">*</span></label>
+                        <select id="txType" required
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
                             <option value="EXPENSE">Expense</option>
                             <option value="INCOME">Income</option>
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Amount (<span class="currencySymbol">₹</span>) <span class="text-rose-500">*</span></label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Amount (<span
+                                class="currencySymbol">₹</span>) <span class="text-rose-500">*</span></label>
                         <input type="number" id="txAmount" step="0.01" min="0.01" required placeholder="0.00"
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Category <span class="text-rose-500">*</span></label>
-                        <select id="txCategory" required class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Category <span
+                                class="text-rose-500">*</span></label>
+                        <select id="txCategory" required
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white">
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Date <span class="text-rose-500">*</span></label>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1">Date <span
+                                class="text-rose-500">*</span></label>
                         <input type="date" id="txDate" required
-                               class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                            class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     </div>
                 </div>
 
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Notes (Optional)</label>
                     <textarea id="txNotes" rows="2" maxlength="255" placeholder="Optional notes or merchant info..."
-                              class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
+                        class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none"></textarea>
                 </div>
 
-                <div id="modalError" class="hidden text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200"></div>
+                <div id="modalError"
+                    class="hidden text-xs text-rose-600 bg-rose-50 p-2.5 rounded-lg border border-rose-200"></div>
 
                 <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="closeTransactionModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg">
+                    <button type="button" onclick="closeTransactionModal()"
+                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg">
                         Cancel
                     </button>
-                    <button type="submit" id="modalSubmitBtn" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">
+                    <button type="submit" id="modalSubmitBtn"
+                        class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">
                         Save Transaction
                     </button>
                 </div>
@@ -502,7 +563,8 @@
     </div>
 
     <!-- MODAL: Budget Setting -->
-    <div id="budgetModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div id="budgetModal"
+        class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-100 overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
                 <h3 class="text-base font-bold text-slate-900">Set Monthly Budget</h3>
@@ -514,19 +576,23 @@
                 <div>
                     <label class="block text-xs font-semibold text-slate-700 mb-1">Target Month</label>
                     <input type="month" id="budgetMonth" required
-                           class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-700 mb-1">Spending Limit (<span class="currencySymbol">₹</span>)</label>
+                    <label class="block text-xs font-semibold text-slate-700 mb-1">Spending Limit (<span
+                            class="currencySymbol">₹</span>)</label>
                     <input type="number" id="budgetLimit" step="0.01" min="0" required placeholder="30000.00"
-                           class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
-                    <p class="text-[11px] text-slate-500 mt-1">Automatic alert triggers when spending crosses 80% and 100%.</p>
+                        class="w-full px-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                    <p class="text-[11px] text-slate-500 mt-1">Automatic alert triggers when spending crosses 80% and
+                        100%.</p>
                 </div>
                 <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
-                    <button type="button" onclick="closeBudgetModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg">
+                    <button type="button" onclick="closeBudgetModal()"
+                        class="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 rounded-lg">
                         Cancel
                     </button>
-                    <button type="submit" class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">
+                    <button type="submit"
+                        class="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm">
                         Save Budget
                     </button>
                 </div>
@@ -535,7 +601,8 @@
     </div>
 
     <!-- MODAL: Custom Category Manager -->
-    <div id="categoryModal" class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+    <div id="categoryModal"
+        class="hidden fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
         <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden">
             <div class="flex items-center justify-between px-6 py-4 border-b border-slate-100 bg-slate-50">
                 <h3 class="text-base font-bold text-slate-900">Custom Categories</h3>
@@ -547,18 +614,20 @@
                 <!-- Add Category Form -->
                 <form id="createCategoryForm" onsubmit="handleCreateCategory(event)" class="flex gap-2">
                     <input type="text" id="newCategoryName" required placeholder="New category name (e.g. Gym)"
-                           class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
+                        class="flex-1 px-3 py-2 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none">
                     <select id="newCategoryType" class="text-xs px-2 py-2 border border-slate-300 rounded-lg bg-white">
                         <option value="EXPENSE">Expense</option>
                         <option value="INCOME">Income</option>
                     </select>
-                    <button type="submit" class="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg">
+                    <button type="submit"
+                        class="px-3 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg">
                         <i class="fa-solid fa-plus"></i>
                     </button>
                 </form>
 
                 <!-- Categories List -->
-                <div class="border border-slate-200 rounded-xl max-h-56 overflow-y-auto divide-y divide-slate-100 text-xs" id="categoryModalList">
+                <div class="border border-slate-200 rounded-xl max-h-56 overflow-y-auto divide-y divide-slate-100 text-xs"
+                    id="categoryModalList">
                 </div>
             </div>
         </div>
@@ -569,4 +638,5 @@
 
     <script src="app.js"></script>
 </body>
+
 </html>
