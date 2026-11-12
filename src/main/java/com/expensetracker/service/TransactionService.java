@@ -40,4 +40,13 @@ public interface TransactionService {
             TransactionType type,
             String search
     );
+
+    byte[] exportTransactionsToPdf(
+            User user,
+            LocalDate startDate,
+            LocalDate endDate,
+            String category,
+            TransactionType type,
+            String search
+    );
 }

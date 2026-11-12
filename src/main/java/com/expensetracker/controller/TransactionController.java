@@ -142,4 +142,25 @@ public class TransactionController {
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
                 .body(csvBytes);
     }
+
+    @GetMapping("/export/pdf")
+    @Operation(summary = "Export bank-grade PDF statement report",
+               description = "Generates and downloads a clean, date-stamped PDF statement for personal audit and tax reporting")
+    public ResponseEntity<byte[]> exportToPdf(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) String category,
+            @RequestParam(required = false) TransactionType type,
+            @RequestParam(required = false) String search) {
+
+        User user = authService.getCurrentAuthenticatedUser();
+        byte[] pdfBytes = transactionService.exportTransactionsToPdf(user, startDate, endDate, category, type, search);
+
+        String filename = "expenses_statement_" + LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE) + ".pdf";
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
 }

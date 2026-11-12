@@ -836,6 +836,30 @@ async function exportToCSV() {
 }
 
 /**
+ * Bank-Grade PDF Statement Export
+ */
+async function exportToPDF() {
+    const params = getFilterParams();
+    try {
+        showToast('Generating PDF', 'Preparing your statement report...', 'info');
+        const response = await authFetch(`${API_BASE}/export/pdf?${params.toString()}`);
+        if (!response.ok) throw new Error('Failed to generate PDF statement');
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `expenses_statement_${new Date().toISOString().slice(0, 10)}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        showToast('Statement Ready', 'PDF statement downloaded successfully.', 'success');
+    } catch (e) {
+        showToast('PDF Export Error', e.message, 'error');
+    }
+}
+
+/**
  * Authentication Handling
  */
 function showAuthModal(register = false) {

@@ -12,6 +12,20 @@ import com.expensetracker.exception.ResourceNotFoundException;
 import com.expensetracker.repository.BudgetRepository;
 import com.expensetracker.repository.TransactionRepository;
 import com.opencsv.CSVWriter;
+import com.lowagie.text.Document;
+import com.lowagie.text.Element;
+import com.lowagie.text.Font;
+import com.lowagie.text.FontFactory;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.Phrase;
+import com.lowagie.text.Rectangle;
+import com.lowagie.text.pdf.PdfPCell;
+import com.lowagie.text.pdf.PdfPTable;
+import com.lowagie.text.pdf.PdfWriter;
+import java.awt.Color;
+import java.text.DecimalFormat;
+import java.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.domain.Page;
@@ -278,6 +292,308 @@ public class TransactionServiceImpl implements TransactionService {
         } catch (Exception e) {
             log.error("Failed to generate CSV export", e);
             throw new RuntimeException("Failed to generate CSV export: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportTransactionsToPdf(
+            User user,
+            LocalDate startDate,
+            LocalDate endDate,
+            String category,
+            TransactionType type,
+            String search) {
+
+        String sanitizedSearch = (search != null && !search.trim().isEmpty()) ? search.trim() : null;
+        String sanitizedCategory = (category != null && !category.trim().isEmpty() && !category.equalsIgnoreCase("ALL"))
+                ? category.trim()
+                : null;
+
+        List<Transaction> transactions = transactionRepository.findAllWithFilters(
+                user, startDate, endDate, sanitizedCategory, type, sanitizedSearch
+        );
+
+        log.info("Exporting {} transactions to PDF statement for user [ID: {}]", transactions.size(), user.getId());
+
+        // Calculate KPI Totals
+        BigDecimal totalIncome = BigDecimal.ZERO;
+        BigDecimal totalExpense = BigDecimal.ZERO;
+        for (Transaction t : transactions) {
+            if (t.getType() == TransactionType.INCOME) {
+                totalIncome = totalIncome.add(t.getAmount());
+            } else {
+                totalExpense = totalExpense.add(t.getAmount());
+            }
+        }
+        BigDecimal netBalance = totalIncome.subtract(totalExpense);
+
+        String currency = (user.getCurrency() != null && !user.getCurrency().trim().isEmpty())
+                ? user.getCurrency().trim()
+                : "INR";
+        DecimalFormat df = new DecimalFormat("#,##0.00");
+
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            Document document = new Document(PageSize.A4, 36, 36, 36, 36);
+            PdfWriter.getInstance(document, baos);
+            document.open();
+
+            // Color Palette
+            Color primaryGreen = new Color(5, 150, 105);      // Tailwind emerald-600
+            Color textDark = new Color(15, 23, 42);          // slate-900
+            Color textMuted = new Color(100, 116, 139);      // slate-500
+            Color borderColor = new Color(226, 232, 240);    // slate-200
+            Color bgLight = new Color(248, 250, 252);        // slate-50
+            Color tableHeaderBg = new Color(30, 41, 59);     // slate-800
+            Color incomeColor = new Color(5, 150, 105);      // emerald-600
+            Color expenseColor = new Color(225, 29, 72);     // rose-600
+
+            // Fonts
+            Font brandFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, primaryGreen);
+            Font brandSubFont = FontFactory.getFont(FontFactory.HELVETICA, 8, textMuted);
+            Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, textDark);
+            Font sectionFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, textDark);
+            Font labelFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, textMuted);
+            Font valueFont = FontFactory.getFont(FontFactory.HELVETICA, 9, textDark);
+            Font thFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, Color.WHITE);
+            Font cellFont = FontFactory.getFont(FontFactory.HELVETICA, 8, textDark);
+            Font cellMonoFont = FontFactory.getFont(FontFactory.HELVETICA, 8, textMuted);
+            Font incomeFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, incomeColor);
+            Font expenseFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 8, expenseColor);
+            Font footerFont = FontFactory.getFont(FontFactory.HELVETICA, 7, textMuted);
+
+            // 1. Header Bar: Brand Logo & Title on Left, Statement Info on Right
+            PdfPTable headerTable = new PdfPTable(2);
+            headerTable.setWidthPercentage(100f);
+            headerTable.setWidths(new float[]{60f, 40f});
+
+            PdfPCell brandCell = new PdfPCell();
+            brandCell.setBorder(Rectangle.NO_BORDER);
+            brandCell.addElement(new Paragraph("ExpenseFlow", brandFont));
+            brandCell.addElement(new Paragraph("SMART PERSONAL FINANCE & AUDIT REPORT", brandSubFont));
+            headerTable.addCell(brandCell);
+
+            PdfPCell metaCell = new PdfPCell();
+            metaCell.setBorder(Rectangle.NO_BORDER);
+            metaCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            Paragraph docTitle = new Paragraph("ACCOUNT STATEMENT", titleFont);
+            docTitle.setAlignment(Element.ALIGN_RIGHT);
+            metaCell.addElement(docTitle);
+            String generatedAt = LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy, hh:mm a"));
+            Paragraph genDate = new Paragraph("Generated: " + generatedAt, brandSubFont);
+            genDate.setAlignment(Element.ALIGN_RIGHT);
+            metaCell.addElement(genDate);
+            headerTable.addCell(metaCell);
+
+            document.add(headerTable);
+
+            // Divider Line
+            PdfPTable divider = new PdfPTable(1);
+            divider.setWidthPercentage(100f);
+            divider.setSpacingBefore(8f);
+            divider.setSpacingAfter(10f);
+            PdfPCell divCell = new PdfPCell();
+            divCell.setFixedHeight(2f);
+            divCell.setBackgroundColor(primaryGreen);
+            divCell.setBorder(Rectangle.NO_BORDER);
+            divider.addCell(divCell);
+            document.add(divider);
+
+            // 2. Info Card: User details & Filter Criteria
+            PdfPTable infoTable = new PdfPTable(2);
+            infoTable.setWidthPercentage(100f);
+            infoTable.setWidths(new float[]{50f, 50f});
+            infoTable.setSpacingAfter(12f);
+
+            // Left Box: User Info
+            PdfPCell userBox = new PdfPCell();
+            userBox.setBackgroundColor(bgLight);
+            userBox.setBorderColor(borderColor);
+            userBox.setBorderWidth(1f);
+            userBox.setPadding(8f);
+            userBox.addElement(new Paragraph("ACCOUNT HOLDER DETAILS", labelFont));
+            userBox.addElement(new Paragraph("Name: " + (user.getName() != null ? user.getName() : "Valued User"), valueFont));
+            userBox.addElement(new Paragraph("Email: " + user.getEmail(), valueFont));
+            userBox.addElement(new Paragraph("Currency: " + currency, valueFont));
+            infoTable.addCell(userBox);
+
+            // Right Box: Filter & Period Info
+            PdfPCell filterBox = new PdfPCell();
+            filterBox.setBackgroundColor(bgLight);
+            filterBox.setBorderColor(borderColor);
+            filterBox.setBorderWidth(1f);
+            filterBox.setPadding(8f);
+            filterBox.addElement(new Paragraph("STATEMENT SCOPE", labelFont));
+            String dateRangeStr = (startDate != null ? startDate.toString() : "All Past")
+                    + "  to  "
+                    + (endDate != null ? endDate.toString() : "Present");
+            filterBox.addElement(new Paragraph("Period: " + dateRangeStr, valueFont));
+            filterBox.addElement(new Paragraph("Category: " + (sanitizedCategory != null ? sanitizedCategory : "All Categories"), valueFont));
+            filterBox.addElement(new Paragraph("Type: " + (type != null ? type.name() : "All Types (Income & Expense)"), valueFont));
+            infoTable.addCell(filterBox);
+
+            document.add(infoTable);
+
+            // 3. KPI Summary Cards (Income, Expense, Net Balance)
+            PdfPTable kpiTable = new PdfPTable(3);
+            kpiTable.setWidthPercentage(100f);
+            kpiTable.setWidths(new float[]{33.33f, 33.33f, 33.34f});
+            kpiTable.setSpacingAfter(14f);
+
+            // KPI Card 1: Total Inflow
+            PdfPCell incCell = new PdfPCell();
+            incCell.setBackgroundColor(new Color(236, 253, 245)); // emerald-50
+            incCell.setBorderColor(new Color(167, 243, 208));    // emerald-200
+            incCell.setBorderWidth(1f);
+            incCell.setPadding(8f);
+            incCell.addElement(new Paragraph("TOTAL INCOME", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7, incomeColor)));
+            Paragraph incVal = new Paragraph("+ " + currency + " " + df.format(totalIncome), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, incomeColor));
+            incCell.addElement(incVal);
+            kpiTable.addCell(incCell);
+
+            // KPI Card 2: Total Outflow
+            PdfPCell expCell = new PdfPCell();
+            expCell.setBackgroundColor(new Color(255, 241, 242)); // rose-50
+            expCell.setBorderColor(new Color(254, 205, 211));    // rose-200
+            expCell.setBorderWidth(1f);
+            expCell.setPadding(8f);
+            expCell.addElement(new Paragraph("TOTAL EXPENSE", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7, expenseColor)));
+            Paragraph expVal = new Paragraph("- " + currency + " " + df.format(totalExpense), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, expenseColor));
+            expCell.addElement(expVal);
+            kpiTable.addCell(expCell);
+
+            // KPI Card 3: Net Balance
+            Color balanceColor = netBalance.compareTo(BigDecimal.ZERO) >= 0 ? incomeColor : expenseColor;
+            PdfPCell balCell = new PdfPCell();
+            balCell.setBackgroundColor(new Color(241, 245, 249)); // slate-100
+            balCell.setBorderColor(borderColor);
+            balCell.setBorderWidth(1f);
+            balCell.setPadding(8f);
+            balCell.addElement(new Paragraph("NET CASH FLOW", FontFactory.getFont(FontFactory.HELVETICA_BOLD, 7, textDark)));
+            String sign = netBalance.compareTo(BigDecimal.ZERO) >= 0 ? "+ " : "- ";
+            Paragraph balVal = new Paragraph(sign + currency + " " + df.format(netBalance.abs()), FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, balanceColor));
+            balCell.addElement(balVal);
+            kpiTable.addCell(balCell);
+
+            document.add(kpiTable);
+
+            // Section Title for Transactions
+            Paragraph txHeader = new Paragraph("ITEMIZED TRANSACTIONS (" + transactions.size() + ")", sectionFont);
+            txHeader.setSpacingAfter(6f);
+            document.add(txHeader);
+
+            // 4. Itemized Transactions Table
+            PdfPTable txTable = new PdfPTable(6);
+            txTable.setWidthPercentage(100f);
+            txTable.setWidths(new float[]{14f, 26f, 15f, 13f, 16f, 16f});
+
+            // Table Header Cells
+            String[] headers = new String[]{"Date", "Title", "Category", "Type", "Amount (" + currency + ")", "Notes"};
+            for (String h : headers) {
+                PdfPCell cell = new PdfPCell(new Phrase(h, thFont));
+                cell.setBackgroundColor(tableHeaderBg);
+                cell.setPadding(6f);
+                cell.setBorderColor(tableHeaderBg);
+                if (h.startsWith("Amount")) {
+                    cell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                } else {
+                    cell.setHorizontalAlignment(Element.ALIGN_LEFT);
+                }
+                txTable.addCell(cell);
+            }
+
+            // Table Data Rows
+            if (transactions.isEmpty()) {
+                PdfPCell emptyCell = new PdfPCell(new Phrase("No transactions found matching the selected filter criteria.", cellFont));
+                emptyCell.setColspan(6);
+                emptyCell.setPadding(14f);
+                emptyCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                emptyCell.setBorderColor(borderColor);
+                txTable.addCell(emptyCell);
+            } else {
+                boolean alternate = false;
+                for (Transaction t : transactions) {
+                    Color rowBg = alternate ? bgLight : Color.WHITE;
+                    alternate = !alternate;
+
+                    // Date
+                    PdfPCell dateCell = new PdfPCell(new Phrase(t.getTransactionDate().toString(), cellMonoFont));
+                    dateCell.setBackgroundColor(rowBg);
+                    dateCell.setBorderColor(borderColor);
+                    dateCell.setPadding(5f);
+                    txTable.addCell(dateCell);
+
+                    // Title
+                    PdfPCell titleCell = new PdfPCell(new Phrase(t.getTitle(), cellFont));
+                    titleCell.setBackgroundColor(rowBg);
+                    titleCell.setBorderColor(borderColor);
+                    titleCell.setPadding(5f);
+                    txTable.addCell(titleCell);
+
+                    // Category
+                    PdfPCell catCell = new PdfPCell(new Phrase(t.getCategory(), cellFont));
+                    catCell.setBackgroundColor(rowBg);
+                    catCell.setBorderColor(borderColor);
+                    catCell.setPadding(5f);
+                    txTable.addCell(catCell);
+
+                    // Type
+                    boolean isIncome = t.getType() == TransactionType.INCOME;
+                    PdfPCell typeCell = new PdfPCell(new Phrase(t.getType().name(), isIncome ? incomeFont : expenseFont));
+                    typeCell.setBackgroundColor(rowBg);
+                    typeCell.setBorderColor(borderColor);
+                    typeCell.setPadding(5f);
+                    txTable.addCell(typeCell);
+
+                    // Amount
+                    String formattedAmt = (isIncome ? "+ " : "- ") + df.format(t.getAmount());
+                    PdfPCell amtCell = new PdfPCell(new Phrase(formattedAmt, isIncome ? incomeFont : expenseFont));
+                    amtCell.setBackgroundColor(rowBg);
+                    amtCell.setBorderColor(borderColor);
+                    amtCell.setPadding(5f);
+                    amtCell.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                    txTable.addCell(amtCell);
+
+                    // Notes
+                    String notesStr = (t.getNotes() != null && !t.getNotes().trim().isEmpty()) ? t.getNotes().trim() : "-";
+                    PdfPCell notesCell = new PdfPCell(new Phrase(notesStr, cellMonoFont));
+                    notesCell.setBackgroundColor(rowBg);
+                    notesCell.setBorderColor(borderColor);
+                    notesCell.setPadding(5f);
+                    txTable.addCell(notesCell);
+                }
+            }
+
+            document.add(txTable);
+
+            // 5. Footer & Legal Disclaimer
+            Paragraph spacer = new Paragraph(" ");
+            spacer.setSpacingBefore(10f);
+            document.add(spacer);
+
+            PdfPTable footerTable = new PdfPTable(1);
+            footerTable.setWidthPercentage(100f);
+            PdfPCell footerCell = new PdfPCell();
+            footerCell.setBorder(Rectangle.TOP);
+            footerCell.setBorderColor(borderColor);
+            footerCell.setBorderWidth(0.5f);
+            footerCell.setPaddingTop(6f);
+
+            Paragraph disclaimer = new Paragraph(
+                    "This is an official computer-generated statement issued by ExpenseFlow. Generated securely for personal audit, accounting, and tax computation purposes. For any discrepancies, please review your recorded entries in ExpenseFlow.",
+                    footerFont
+            );
+            disclaimer.setAlignment(Element.ALIGN_CENTER);
+            footerCell.addElement(disclaimer);
+            footerTable.addCell(footerCell);
+
+            document.add(footerTable);
+
+            document.close();
+            return baos.toByteArray();
+        } catch (Exception e) {
+            log.error("Failed to generate PDF statement", e);
+            throw new RuntimeException("Failed to generate PDF statement: " + e.getMessage(), e);
         }
     }
 
